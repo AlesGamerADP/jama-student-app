@@ -1,7 +1,7 @@
 "use client"
 
-import { CheckCircle2, Clock, Package, Store, Utensils, X } from "lucide-react"
-import { formatPrecio, type Pedido } from "@/lib/jama-data"
+import { CheckCircle2, Clock, CreditCard, Package, Store, Utensils, X } from "lucide-react"
+import { formatPrecio, metodoLabel, type Pedido } from "@/lib/jama-data"
 
 // Deterministic pseudo-QR grid generated from the delivery code.
 function QrGrid({ seed }: { seed: string }) {
@@ -109,6 +109,11 @@ export function Ticket({
                   ? "Comer en el local"
                   : "Recojo rápido"
               }
+            />
+            <Row
+              icon={<CreditCard className="size-4" />}
+              label="Pago"
+              value={metodoLabel(pedido.metodoPago)}
             />
             <div className="flex items-center justify-between border-t border-border pt-2.5">
               <span className="font-medium text-muted-foreground">Total pagado</span>

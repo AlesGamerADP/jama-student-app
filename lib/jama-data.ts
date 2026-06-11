@@ -1,5 +1,6 @@
 export type Modalidad = "dine-in" | "takeout"
 export type EstadoPedido = "recibido" | "preparacion" | "listo"
+export type MetodoPago = "tarjeta" | "billetera" | "express"
 
 export interface Plato {
   id: number
@@ -21,9 +22,19 @@ export interface Pedido {
   precio: number
   hora: string
   modalidad: Modalidad
+  metodoPago: MetodoPago
   estado: EstadoPedido
   creado: number
 }
+
+export const METODOS_PAGO: { id: MetodoPago; label: string }[] = [
+  { id: "tarjeta", label: "Tarjeta" },
+  { id: "billetera", label: "Yape / Plin" },
+  { id: "express", label: "Apple / Google Pay" },
+]
+
+export const metodoLabel = (m: MetodoPago) =>
+  METODOS_PAGO.find((x) => x.id === m)?.label ?? "Tarjeta"
 
 export const HORARIOS = [
   "12:00 - 12:30",
