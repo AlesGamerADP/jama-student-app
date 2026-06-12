@@ -4,7 +4,6 @@ import { useCallback, useState } from "react"
 import { Landing } from "@/components/jama/landing"
 import { StudentDashboard } from "@/components/jama/student-dashboard"
 import { RestaurantDashboard } from "@/components/jama/restaurant-dashboard"
-import { ViewSwitcher } from "@/components/jama/view-switcher"
 import { ToastProvider, useToast } from "@/components/jama/toast"
 import {
   generarCodigo,
@@ -111,7 +110,6 @@ function Shell() {
         />
       )}
       {view === "landing" && <Landing onLogin={(role) => setView(role)} />}
-      <ViewSwitcher view={view} onChange={setView} />
     </>
   )
 }

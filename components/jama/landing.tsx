@@ -2,9 +2,11 @@
 
 import { useState } from "react"
 import {
+  AlertCircle,
   ArrowRight,
   Clock,
   CreditCard,
+  Info,
   LayoutDashboard,
   QrCode,
   ScanLine,
@@ -16,6 +18,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { JamaLogo } from "@/components/jama/logo"
+import { useToast } from "@/components/jama/toast"
+import { autenticar } from "@/lib/jama-data"
 import type { Role } from "@/components/jama/app-shell"
 
 function smoothScroll(id: string) {
@@ -25,8 +29,8 @@ function smoothScroll(id: string) {
 export function Landing({ onLogin }: { onLogin: (role: Role) => void }) {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onLogin={onLogin} />
-      <Hero onLogin={onLogin} />
+      <Navbar />
+      <Hero />
       <Audiences />
       <HowItWorks />
       <Portal onLogin={onLogin} />
@@ -35,7 +39,7 @@ export function Landing({ onLogin }: { onLogin: (role: Role) => void }) {
   )
 }
 
-function Navbar({ onLogin }: { onLogin: (role: Role) => void }) {
+function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -71,7 +75,7 @@ function Navbar({ onLogin }: { onLogin: (role: Role) => void }) {
   )
 }
 
-function Hero({ onLogin }: { onLogin: (role: Role) => void }) {
+function Hero() {
   return (
     <section className="relative overflow-hidden">
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-8 lg:py-24 lg:px-8">
@@ -92,7 +96,7 @@ function Hero({ onLogin }: { onLogin: (role: Role) => void }) {
           <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row">
             <Button
               size="lg"
-              onClick={() => onLogin("alumno")}
+              onClick={() => smoothScroll("portal")}
               className="rounded-full font-semibold transition-transform hover:scale-[1.02]"
             >
               <Users className="size-5" />
@@ -101,7 +105,7 @@ function Hero({ onLogin }: { onLogin: (role: Role) => void }) {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => onLogin("restaurante")}
+              onClick={() => smoothScroll("portal")}
               className="rounded-full border-2 font-semibold transition-transform hover:scale-[1.02]"
             >
               <Store className="size-5" />
@@ -297,6 +301,45 @@ function HowItWorks() {
 
 function Portal({ onLogin }: { onLogin: (role: Role) => void }) {
   const [tab, setTab] = useState<Role>("alumno")
+  const [correo, setCorreo] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const { notify } = useToast()
+
+  const demo =
+    tab === "alumno"
+      ? { correo: "alumno@univalle.edu", pass: "jama123" }
+      : { correo: "comercio@jama.com", pass: "jama123" }
+
+  function cambiarTab(nuevo: Role) {
+    setTab(nuevo)
+    setError(null)
+    setCorreo("")
+    setPassword("")
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const res = autenticar(correo, password, tab)
+    if (!res.ok) {
+      setError(res.error)
+      return
+    }
+    setError(null)
+    notify({
+      tone: "success",
+      title: `¡Bienvenido, ${res.cuenta.nombre}!`,
+      message: "Inicio de sesión correcto.",
+    })
+    onLogin(tab)
+  }
+
+  function autollenar() {
+    setCorreo(demo.correo)
+    setPassword(demo.pass)
+    setError(null)
+  }
+
   return (
     <section id="portal" className="scroll-mt-20 py-16 lg:py-24">
       <div className="mx-auto max-w-md px-4 sm:px-6">
@@ -309,24 +352,18 @@ function Portal({ onLogin }: { onLogin: (role: Role) => void }) {
 
         <div className="mt-8 overflow-hidden rounded-3xl border border-border bg-card shadow-xl shadow-black/5">
           <div className="grid grid-cols-2 gap-1 bg-secondary p-1.5">
-            <TabButton active={tab === "alumno"} onClick={() => setTab("alumno")}>
+            <TabButton active={tab === "alumno"} onClick={() => cambiarTab("alumno")}>
               <Users className="size-4" /> Portal Alumnos
             </TabButton>
             <TabButton
               active={tab === "restaurante"}
-              onClick={() => setTab("restaurante")}
+              onClick={() => cambiarTab("restaurante")}
             >
               <Store className="size-4" /> Portal Restaurantes
             </TabButton>
           </div>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              onLogin(tab)
-            }}
-            className="space-y-4 p-6"
-          >
+          <form onSubmit={handleSubmit} className="space-y-4 p-6">
             <Field
               label={
                 tab === "alumno" ? "Correo institucional" : "Correo de empresa"
@@ -337,8 +374,27 @@ function Portal({ onLogin }: { onLogin: (role: Role) => void }) {
                   : "contacto@turestaurante.com"
               }
               type="email"
+              value={correo}
+              onChange={setCorreo}
             />
-            <Field label="Contraseña" placeholder="••••••••" type="password" />
+            <Field
+              label="Contraseña"
+              placeholder="••••••••"
+              type="password"
+              value={password}
+              onChange={setPassword}
+            />
+
+            {error && (
+              <p
+                role="alert"
+                className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-2.5 text-sm font-medium text-destructive"
+              >
+                <AlertCircle className="size-4 shrink-0" />
+                {error}
+              </p>
+            )}
+
             <Button
               type="submit"
               size="lg"
@@ -349,9 +405,18 @@ function Portal({ onLogin }: { onLogin: (role: Role) => void }) {
                 : "Acceder al Panel de Control"}
               <ArrowRight className="size-4" />
             </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              Demo interactiva — usa cualquier dato para ingresar.
-            </p>
+
+            <button
+              type="button"
+              onClick={autollenar}
+              className="flex w-full items-start gap-2 rounded-xl border border-dashed border-border bg-secondary/50 px-3 py-2.5 text-left text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              <Info className="size-4 shrink-0 text-primary" />
+              <span>
+                Cuenta de prueba: <strong>{demo.correo}</strong> · contraseña{" "}
+                <strong>{demo.pass}</strong>. Toca para autocompletar.
+              </span>
+            </button>
           </form>
         </div>
       </div>
@@ -387,10 +452,14 @@ function Field({
   label,
   placeholder,
   type,
+  value,
+  onChange,
 }: {
   label: string
   placeholder: string
   type: string
+  value: string
+  onChange: (v: string) => void
 }) {
   return (
     <label className="block">
@@ -400,6 +469,8 @@ function Field({
       <input
         required
         type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
       />

@@ -36,6 +36,49 @@ export const METODOS_PAGO: { id: MetodoPago; label: string }[] = [
 export const metodoLabel = (m: MetodoPago) =>
   METODOS_PAGO.find((x) => x.id === m)?.label ?? "Tarjeta"
 
+export type Role = "alumno" | "restaurante"
+
+interface Cuenta {
+  correo: string
+  password: string
+  rol: Role
+  nombre: string
+}
+
+export const CUENTAS: Cuenta[] = [
+  {
+    correo: "alumno@univalle.edu",
+    password: "jama123",
+    rol: "alumno",
+    nombre: "Estudiante Demo",
+  },
+  {
+    correo: "comercio@jama.com",
+    password: "jama123",
+    rol: "restaurante",
+    nombre: "Café Univalle",
+  },
+]
+
+export function autenticar(
+  correo: string,
+  password: string,
+  rol: Role,
+): { ok: true; cuenta: Cuenta } | { ok: false; error: string } {
+  const cuenta = CUENTAS.find(
+    (c) => c.correo.toLowerCase() === correo.trim().toLowerCase(),
+  )
+  if (!cuenta) return { ok: false, error: "No existe una cuenta con ese correo." }
+  if (cuenta.password !== password)
+    return { ok: false, error: "Contraseña incorrecta." }
+  if (cuenta.rol !== rol)
+    return {
+      ok: false,
+      error: `Esta cuenta es de ${cuenta.rol === "alumno" ? "estudiante" : "restaurante"}. Cambia de portal.`,
+    }
+  return { ok: true, cuenta }
+}
+
 export const HORARIOS = [
   "12:00 - 12:30",
   "12:30 - 13:00",
