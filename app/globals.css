@@ -139,3 +139,21 @@
     @apply font-sans;
   }
 }
+
+@keyframes jama-scan {
+  0% {
+    top: 14%;
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 86%;
+    opacity: 0.4;
+  }
+}
+
+.jama-laser {
+  animation: jama-scan 1.8s ease-in-out infinite alternate;
+}

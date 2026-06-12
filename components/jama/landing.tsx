@@ -41,7 +41,7 @@ export function Landing({ onLogin }: { onLogin: (role: Role) => void }) {
 
 function Navbar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
+    <header className="sticky top-12 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <JamaLogo />
         <div className="hidden items-center gap-8 md:flex">
@@ -245,7 +245,7 @@ function HowItWorks() {
     {
       icon: CreditCard,
       title: "Reserva y paga",
-      text: "Elige horario y modalidad, y paga de forma segura por adelantado.",
+      text: "Elige tu horario de recojo y paga de forma segura por adelantado.",
     },
     {
       icon: QrCode,
