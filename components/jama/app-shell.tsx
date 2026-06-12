@@ -4,13 +4,13 @@ import { useCallback, useState } from "react"
 import { Landing } from "@/components/jama/landing"
 import { StudentDashboard } from "@/components/jama/student-dashboard"
 import { RestaurantDashboard } from "@/components/jama/restaurant-dashboard"
+import { ViewSwitcher } from "@/components/jama/view-switcher"
 import { ToastProvider, useToast } from "@/components/jama/toast"
 import {
   generarCodigo,
   PLATOS_SEMILLA,
   type EstadoPedido,
   type MetodoPago,
-  type Modalidad,
   type Pedido,
   type Plato,
 } from "@/lib/jama-data"
@@ -22,15 +22,11 @@ function Shell() {
   const [view, setView] = useState<View>("landing")
   const [platos, setPlatos] = useState<Plato[]>(PLATOS_SEMILLA)
   const [pedidos, setPedidos] = useState<Pedido[]>([])
+  const [ingresos, setIngresos] = useState(0)
   const { notify } = useToast()
 
   const reservar = useCallback(
-    (
-      plato: Plato,
-      hora: string,
-      modalidad: Modalidad,
-      metodoPago: MetodoPago,
-    ): Pedido => {
+    (plato: Plato, hora: string, metodoPago: MetodoPago): Pedido => {
       const pedido: Pedido = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         codigo: generarCodigo(),
@@ -39,7 +35,7 @@ function Shell() {
         restaurante: plato.restaurante,
         precio: plato.precio,
         hora,
-        modalidad,
+        modalidad: "takeout",
         metodoPago,
         estado: "recibido",
         creado: Date.now(),
@@ -52,12 +48,28 @@ function Shell() {
       )
       // Agrega a la lista global de pedidos activos
       setPedidos((prev) => [...prev, pedido])
+      // Suma el ingreso al total del día del restaurante
+      setIngresos((prev) => prev + plato.precio)
       notify({
         tone: "success",
         title: "¡Reserva confirmada!",
         message: `${plato.nombre} — recojo ${hora}. Código #${pedido.codigo}.`,
       })
       return pedido
+    },
+    [notify],
+  )
+
+  const editarPlato = useCallback(
+    (id: number, cambios: { nombre: string; precio: number; stock: number }) => {
+      setPlatos((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...cambios } : p)),
+      )
+      notify({
+        tone: "success",
+        title: "Menú actualizado",
+        message: `Los cambios en "${cambios.nombre}" ya son visibles para los estudiantes.`,
+      })
     },
     [notify],
   )
@@ -93,23 +105,29 @@ function Shell() {
 
   return (
     <>
-      {view === "alumno" && (
-        <StudentDashboard
-          platos={platos}
-          pedidos={pedidos}
-          onReservar={reservar}
-          onLogout={() => setView("landing")}
-        />
-      )}
-      {view === "restaurante" && (
-        <RestaurantDashboard
-          pedidos={pedidos}
-          onAvanzar={avanzar}
-          onValidar={validar}
-          onLogout={() => setView("landing")}
-        />
-      )}
-      {view === "landing" && <Landing onLogin={(role) => setView(role)} />}
+      <ViewSwitcher view={view} onChange={setView} />
+      <div className="pt-12">
+        {view === "alumno" && (
+          <StudentDashboard
+            platos={platos}
+            pedidos={pedidos}
+            onReservar={reservar}
+            onLogout={() => setView("landing")}
+          />
+        )}
+        {view === "restaurante" && (
+          <RestaurantDashboard
+            platos={platos}
+            pedidos={pedidos}
+            ingresos={ingresos}
+            onAvanzar={avanzar}
+            onValidar={validar}
+            onEditarPlato={editarPlato}
+            onLogout={() => setView("landing")}
+          />
+        )}
+        {view === "landing" && <Landing onLogin={(role) => setView(role)} />}
+      </div>
     </>
   )
 }

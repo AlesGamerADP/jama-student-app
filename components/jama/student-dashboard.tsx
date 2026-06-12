@@ -11,7 +11,6 @@ import {
   ShoppingBag,
   Smartphone,
   Store,
-  Utensils,
   Wallet,
   X,
 } from "lucide-react"
@@ -24,7 +23,6 @@ import {
   HORARIOS,
   stockInfo,
   type MetodoPago,
-  type Modalidad,
   type Pedido,
   type Plato,
 } from "@/lib/jama-data"
@@ -32,12 +30,7 @@ import {
 interface Props {
   platos: Plato[]
   pedidos: Pedido[]
-  onReservar: (
-    plato: Plato,
-    hora: string,
-    modalidad: Modalidad,
-    metodoPago: MetodoPago,
-  ) => Pedido
+  onReservar: (plato: Plato, hora: string, metodoPago: MetodoPago) => Pedido
   onLogout: () => void
 }
 
@@ -50,7 +43,6 @@ export function StudentDashboard({
   const [checkout, setCheckout] = useState<{
     plato: Plato
     hora: string
-    modalidad: Modalidad
   } | null>(null)
   const [ticket, setTicket] = useState<Pedido | null>(null)
 
@@ -61,12 +53,7 @@ export function StudentDashboard({
 
   function confirmar(metodo: MetodoPago) {
     if (!checkout) return
-    const pedido = onReservar(
-      checkout.plato,
-      checkout.hora,
-      checkout.modalidad,
-      metodo,
-    )
+    const pedido = onReservar(checkout.plato, checkout.hora, metodo)
     setCheckout(null)
     setTicket(pedido)
   }
@@ -95,9 +82,7 @@ export function StudentDashboard({
             <PlatoCard
               key={plato.id}
               plato={plato}
-              onReservar={(hora, modalidad) =>
-                setCheckout({ plato, hora, modalidad })
-              }
+              onReservar={(hora) => setCheckout({ plato, hora })}
             />
           ))}
         </div>
@@ -132,7 +117,6 @@ export function StudentDashboard({
         <CheckoutModal
           plato={checkout.plato}
           hora={checkout.hora}
-          modalidad={checkout.modalidad}
           onClose={() => setCheckout(null)}
           onConfirm={confirmar}
         />
@@ -145,7 +129,7 @@ export function StudentDashboard({
 
 function DashboardHeader({ onLogout }: { onLogout: () => void }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
+    <header className="sticky top-12 z-40 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <JamaLogo />
@@ -171,10 +155,9 @@ function PlatoCard({
   onReservar,
 }: {
   plato: Plato
-  onReservar: (hora: string, modalidad: Modalidad) => void
+  onReservar: (hora: string) => void
 }) {
   const [hora, setHora] = useState(HORARIOS[0])
-  const [modalidad, setModalidad] = useState<Modalidad>("dine-in")
   const info = stockInfo(plato.stock)
 
   return (
@@ -223,26 +206,9 @@ function PlatoCard({
             </select>
           </label>
 
-          <div>
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">
-              Modalidad
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <ModalToggle
-                active={modalidad === "dine-in"}
-                onClick={() => setModalidad("dine-in")}
-                icon={<Utensils className="size-4" />}
-                label="En el local"
-                disabled={info.disabled}
-              />
-              <ModalToggle
-                active={modalidad === "takeout"}
-                onClick={() => setModalidad("takeout")}
-                icon={<Package className="size-4" />}
-                label="Para llevar"
-                disabled={info.disabled}
-              />
-            </div>
+          <div className="flex items-center gap-2 rounded-xl bg-accent/30 px-3 py-2 text-xs font-semibold text-accent-foreground">
+            <Package className="size-4" />
+            Modalidad: Recojo Rápido (Para Llevar)
           </div>
         </div>
 
@@ -251,7 +217,7 @@ function PlatoCard({
             {formatPrecio(plato.precio)}
           </span>
           <Button
-            onClick={() => onReservar(hora, modalidad)}
+            onClick={() => onReservar(hora)}
             disabled={info.disabled}
             className="rounded-xl font-semibold transition-transform hover:scale-[1.02]"
           >
@@ -290,36 +256,6 @@ function StockBadge({
   )
 }
 
-function ModalToggle({
-  active,
-  onClick,
-  icon,
-  label,
-  disabled,
-}: {
-  active: boolean
-  onClick: () => void
-  icon: React.ReactNode
-  label: string
-  disabled: boolean
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-xs font-semibold transition-all disabled:opacity-50 ${
-        active
-          ? "border-primary bg-primary/10 text-primary"
-          : "border-input bg-background text-muted-foreground hover:border-primary/50"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
-  )
-}
-
 function EstadoBadge({ estado }: { estado: Pedido["estado"] }) {
   const map = {
     recibido: { label: "Recibido", cls: "bg-secondary text-secondary-foreground" },
@@ -338,13 +274,11 @@ function EstadoBadge({ estado }: { estado: Pedido["estado"] }) {
 function CheckoutModal({
   plato,
   hora,
-  modalidad,
   onClose,
   onConfirm,
 }: {
   plato: Plato
   hora: string
-  modalidad: Modalidad
   onClose: () => void
   onConfirm: (metodo: MetodoPago) => void
 }) {
@@ -440,8 +374,9 @@ function CheckoutModal({
 
           <div className="mt-4 flex items-center justify-between rounded-2xl border border-dashed border-border p-3 text-sm">
             <span className="text-muted-foreground">Modalidad</span>
-            <span className="font-semibold text-card-foreground">
-              {modalidad === "dine-in" ? "Comer en el local" : "Recojo rápido"}
+            <span className="flex items-center gap-1.5 font-semibold text-card-foreground">
+              <Package className="size-4 text-primary" />
+              Recojo Rápido (Para Llevar)
             </span>
           </div>
 
