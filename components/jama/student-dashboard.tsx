@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react"
 import {
   Apple,
-  Clock,
   CreditCard,
   Lock,
   LogOut,
@@ -20,7 +19,6 @@ import { Ticket } from "@/components/jama/ticket"
 import { useToast } from "@/components/jama/toast"
 import {
   formatPrecio,
-  HORARIOS,
   stockInfo,
   type MetodoPago,
   type Pedido,
@@ -40,10 +38,7 @@ export function StudentDashboard({
   onReservar,
   onLogout,
 }: Props) {
-  const [checkout, setCheckout] = useState<{
-    plato: Plato
-    hora: string
-  } | null>(null)
+  const [checkout, setCheckout] = useState<Plato | null>(null)
   const [ticket, setTicket] = useState<Pedido | null>(null)
 
   const misPedidos = useMemo(
@@ -53,7 +48,7 @@ export function StudentDashboard({
 
   function confirmar(metodo: MetodoPago) {
     if (!checkout) return
-    const pedido = onReservar(checkout.plato, checkout.hora, metodo)
+    const pedido = onReservar(checkout, "Inmediato", metodo)
     setCheckout(null)
     setTicket(pedido)
   }
@@ -82,7 +77,7 @@ export function StudentDashboard({
             <PlatoCard
               key={plato.id}
               plato={plato}
-              onReservar={(hora) => setCheckout({ plato, hora })}
+              onReservar={() => setCheckout(plato)}
             />
           ))}
         </div>
@@ -115,8 +110,7 @@ export function StudentDashboard({
 
       {checkout && (
         <CheckoutModal
-          plato={checkout.plato}
-          hora={checkout.hora}
+          plato={checkout}
           onClose={() => setCheckout(null)}
           onConfirm={confirmar}
         />
@@ -155,9 +149,8 @@ function PlatoCard({
   onReservar,
 }: {
   plato: Plato
-  onReservar: (hora: string) => void
+  onReservar: () => void
 }) {
-  const [hora, setHora] = useState(HORARIOS[0])
   const info = stockInfo(plato.stock)
 
   return (
@@ -187,29 +180,9 @@ function PlatoCard({
           {plato.descripcion}
         </p>
 
-        <div className="mt-4 space-y-3">
-          <label className="block">
-            <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Clock className="size-3.5" /> Horario de recojo
-            </span>
-            <select
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-              disabled={info.disabled}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring disabled:opacity-50"
-            >
-              {HORARIOS.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="flex items-center gap-2 rounded-xl bg-accent/30 px-3 py-2 text-xs font-semibold text-accent-foreground">
-            <Package className="size-4" />
-            Modalidad: Recojo Rápido (Para Llevar)
-          </div>
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-accent/30 px-3 py-2 text-xs font-semibold text-accent-foreground">
+          <Package className="size-4" />
+          Modalidad: Recojo Rápido (Para Llevar)
         </div>
 
         <div className="mt-auto flex items-center justify-between gap-3 pt-5">
@@ -217,7 +190,7 @@ function PlatoCard({
             {formatPrecio(plato.precio)}
           </span>
           <Button
-            onClick={() => onReservar(hora)}
+            onClick={() => onReservar()}
             disabled={info.disabled}
             className="rounded-xl font-semibold transition-transform hover:scale-[1.02]"
           >
@@ -273,12 +246,10 @@ function EstadoBadge({ estado }: { estado: Pedido["estado"] }) {
 
 function CheckoutModal({
   plato,
-  hora,
   onClose,
   onConfirm,
 }: {
   plato: Plato
-  hora: string
   onClose: () => void
   onConfirm: (metodo: MetodoPago) => void
 }) {
@@ -332,7 +303,7 @@ function CheckoutModal({
                 {plato.nombre}
               </p>
               <p className="text-sm text-muted-foreground">
-                {plato.restaurante} · {hora}
+                {plato.restaurante}
               </p>
             </div>
             <span className="font-bold text-foreground">

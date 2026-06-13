@@ -64,7 +64,7 @@ function Shell() {
       notify({
         tone: "success",
         title: "¡Reserva confirmada!",
-        message: `${plato.nombre} — recojo ${hora}. Código #${pedido.codigo}.`,
+        message: `${plato.nombre} — listo para recoger. Código #${pedido.codigo}.`,
       })
       return pedido
     },
