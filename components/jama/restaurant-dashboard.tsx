@@ -1,40 +1,67 @@
 "use client"
 
 import { useMemo, useState } from "react"
+<<<<<<< HEAD
+import {
+  CheckCircle2,
+  ChefHat,
+  ClipboardList,
+  Clock,
+  Package,
+  Plus,
+  Trash2,
+  TrendingUp,
+  Utensils,
+  X,
+} from "lucide-react"
+=======
 import { CircleCheck as CheckCircle2, ChefHat, ClipboardList, Clock, Image as ImageIcon, Package, Pencil, Plus, ScanLine, Store, TrendingUp, Utensils, Wallet, X } from "lucide-react"
+>>>>>>> main
 import { Button } from "@/components/ui/button"
 import { JamaLogo } from "@/components/jama/logo"
 import { useToast } from "@/components/jama/toast"
 import {
   formatPrecio,
-  stockInfo,
   type EstadoPedido,
   type Pedido,
-  type Plato,
+  type RestaurantMenu,
+  type Segundo,
 } from "@/lib/jama-data"
 
 interface Props {
-  platos: Plato[]
+  restaurante: string
+  menu: RestaurantMenu
   pedidos: Pedido[]
   ingresos: number
   onAvanzar: (id: string, estado: EstadoPedido) => void
   onValidar: (codigo: string) => boolean
+<<<<<<< HEAD
+  onEditarEntradas: (entradas: string[]) => void
+  onEditarSegundos: (segundos: Segundo[]) => void
+=======
   onEditarPlato: (
     id: number,
     cambios: { nombre: string; precio: number; stock: number },
   ) => void
   onAgregarPlato: (plato: Omit<Plato, "id">) => void
+>>>>>>> main
   onLogout: () => void
 }
 
 export function RestaurantDashboard({
-  platos,
+  restaurante,
+  menu,
   pedidos,
   ingresos,
   onAvanzar,
   onValidar,
+<<<<<<< HEAD
+  onEditarEntradas,
+  onEditarSegundos,
+=======
   onEditarPlato,
   onAgregarPlato,
+>>>>>>> main
   onLogout,
 }: Props) {
   const [tab, setTab] = useState<"cola" | "menus">("cola")
@@ -60,7 +87,7 @@ export function RestaurantDashboard({
           <div className="flex items-center gap-3">
             <JamaLogo />
             <span className="hidden rounded-full bg-accent/40 px-3 py-1 text-xs font-semibold text-accent-foreground sm:inline">
-              Panel del Restaurante
+              {restaurante}
             </span>
           </div>
           <Button
@@ -76,11 +103,11 @@ export function RestaurantDashboard({
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-foreground">Cocina en vivo</h1>
         <p className="mt-1 text-muted-foreground">
-          Gestiona la cola de despacho, tus menús y valida las entregas en tiempo
+          Gestiona el Menú del Día, la cola de despacho y valida entregas en tiempo
           real.
         </p>
 
-        {/* KPIs: Ingresos del día destacado + métricas de cola */}
+        {/* KPIs: Ingresos del día + métricas de cola */}
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-primary/30 bg-primary p-5 text-primary-foreground shadow-lg shadow-primary/20 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2 text-primary-foreground/90">
@@ -91,7 +118,7 @@ export function RestaurantDashboard({
               {formatPrecio(ingresos)}
             </p>
             <p className="mt-1 text-xs text-primary-foreground/80">
-              Suma automática por cada pago confirmado
+              Suma automática de todas las compras del menú
             </p>
           </div>
           <StatCard icon={ClipboardList} label="En cola" value={stats.total} />
@@ -107,7 +134,7 @@ export function RestaurantDashboard({
           </TabBtn>
           <TabBtn active={tab === "menus"} onClick={() => setTab("menus")}>
             <Utensils className="size-4" />
-            Menús del Día
+            Menú del Día
           </TabBtn>
         </div>
 
@@ -132,9 +159,37 @@ export function RestaurantDashboard({
             <Validador onValidar={onValidar} />
           </div>
         ) : (
+<<<<<<< HEAD
+          <MenuManager
+            menu={menu}
+            onEditarEntradas={onEditarEntradas}
+            onEditarSegundos={onEditarSegundos}
+          />
+=======
           <MenuManager platos={platos} onEditarPlato={onEditarPlato} onAgregarPlato={onAgregarPlato} />
+>>>>>>> main
         )}
       </main>
+    </div>
+  )
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className: string }>
+  label: string
+  value: number
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="size-4" />
+        <span className="text-xs font-medium">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-extrabold text-foreground">{value}</p>
     </div>
   )
 }
@@ -151,7 +206,7 @@ function TabBtn({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+      className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
         active
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:text-foreground"
@@ -162,24 +217,6 @@ function TabBtn({
   )
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof ClipboardList
-  label: string
-  value: number
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <Icon className="size-5 text-primary" />
-      <p className="mt-2 text-2xl font-extrabold text-card-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
-  )
-}
-
 function TicketCard({
   pedido,
   onAvanzar,
@@ -187,21 +224,42 @@ function TicketCard({
   pedido: Pedido
   onAvanzar: (id: string, estado: EstadoPedido) => void
 }) {
-  const bg = {
-    recibido: "bg-card border-border",
-    preparacion: "bg-warning/15 border-warning/40",
-    listo: "bg-success/15 border-success/40",
-  }[pedido.estado]
+  const estadoConfig: Record<
+    Pedido["estado"],
+    { bg: string; next: Pedido["estado"]; label: string }
+  > = {
+    recibido: {
+      bg: "bg-blue-100",
+      next: "preparacion",
+      label: "Recibido",
+    },
+    preparacion: {
+      bg: "bg-yellow-100",
+      next: "listo",
+      label: "Preparando",
+    },
+    listo: {
+      bg: "bg-green-100",
+      next: "listo",
+      label: "¡Listo!",
+    },
+  }
+
+  const config = estadoConfig[pedido.estado]
 
   return (
-    <article
-      className={`rounded-2xl border p-5 transition-all ${bg} animate-in fade-in slide-in-from-bottom-2`}
+    <div
+      className={`rounded-2xl border border-border p-4 ${config.bg} space-y-3`}
     >
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-muted-foreground">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold text-muted-foreground">
             #{pedido.codigo}
           </p>
+<<<<<<< HEAD
+          <p className="mt-1 font-bold text-foreground">
+            {pedido.entrada ? `${pedido.entrada} + ${pedido.segundo}` : pedido.plato}
+=======
           <h3 className="mt-0.5 text-lg font-bold text-card-foreground">
             {pedido.plato}
           </h3>
@@ -849,33 +907,277 @@ function ScannerModal({
             {leyendo
               ? "Leyendo código QR..."
               : "Apunta la cámara al ticket virtual del estudiante."}
+>>>>>>> main
           </p>
-
-          <Button
-            onClick={simularLectura}
-            disabled={leyendo}
-            size="lg"
-            className="mt-4 w-full rounded-xl font-semibold transition-transform hover:scale-[1.02]"
-          >
-            {leyendo ? "Procesando..." : "Simular Lectura de QR"}
-          </Button>
+          <p className="text-xs text-muted-foreground">{pedido.hora}</p>
         </div>
+        <span className="flex-shrink-0 rounded-full bg-background/50 px-2.5 py-1 text-xs font-semibold text-foreground">
+          {config.label}
+        </span>
       </div>
+
+      {pedido.estado !== "listo" && (
+        <Button
+          onClick={() => onAvanzar(pedido.id, config.next)}
+          size="sm"
+          className="w-full rounded-xl"
+        >
+          Avanzar a{" "}
+          {config.next === "preparacion"
+            ? "Preparación"
+            : "Listo"}
+        </Button>
+      )}
     </div>
   )
 }
 
 function EmptyState() {
   return (
-    <div className="mt-4 flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 p-12 text-center">
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
-        <ClipboardList className="size-6" />
-      </span>
-      <p className="mt-4 font-semibold text-foreground">Sin pedidos en cola</p>
-      <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-        Los tickets de los estudiantes aparecerán aquí automáticamente cuando
-        reserven.
+    <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-secondary/20 py-12">
+      <Package className="size-12 text-muted-foreground/40" />
+      <p className="mt-3 text-sm font-medium text-muted-foreground">
+        No hay pedidos en la cola
       </p>
+      <p className="text-xs text-muted-foreground">
+        Los pedidos de los estudiantes aparecerán aquí
+      </p>
+    </div>
+  )
+}
+
+function Validador({ onValidar }: { onValidar: (codigo: string) => boolean }) {
+  const [codigo, setCodigo] = useState("")
+  const [resultado, setResultado] = useState<"ok" | "error" | null>(null)
+  const { notify } = useToast()
+
+  function validar() {
+    const ok = onValidar(codigo.toUpperCase())
+    setResultado(ok ? "ok" : "error")
+    setCodigo("")
+    if (ok) {
+      notify({
+        tone: "success",
+        title: "Pedido entregado",
+        message: "El estudiante ha recogido su orden exitosamente.",
+      })
+    } else {
+      notify({
+        tone: "info",
+        title: "Código inválido",
+        message: "El código no coincide con ningún pedido activo.",
+      })
+    }
+    setTimeout(() => setResultado(null), 2000)
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <h3 className="font-bold text-foreground">Validar entrega</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Ingresa el código del estudiante para confirmar la entrega
+      </p>
+
+      <div className="mt-4 space-y-3">
+        <input
+          type="text"
+          placeholder="ej: JM-1234"
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+          onKeyDown={(e) => e.key === "Enter" && validar()}
+          className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm font-mono text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
+        />
+
+        <Button
+          onClick={validar}
+          disabled={!codigo || resultado !== null}
+          size="sm"
+          className="w-full rounded-xl"
+        >
+          Validar entrega
+        </Button>
+      </div>
+
+      {resultado === "ok" && (
+        <p className="mt-3 flex items-center gap-1.5 rounded-xl bg-success/20 p-2.5 text-xs font-medium text-success">
+          <CheckCircle2 className="size-4" />
+          ¡Pedido entregado correctamente!
+        </p>
+      )}
+      {resultado === "error" && (
+        <p className="mt-3 flex items-center gap-1.5 rounded-xl bg-destructive/20 p-2.5 text-xs font-medium text-destructive">
+          <X className="size-4" />
+          Código no válido
+        </p>
+      )}
+    </div>
+  )
+}
+
+function MenuManager({
+  menu,
+  onEditarEntradas,
+  onEditarSegundos,
+}: {
+  menu: RestaurantMenu
+  onEditarEntradas: (entradas: string[]) => void
+  onEditarSegundos: (segundos: Segundo[]) => void
+}) {
+  const [entradas, setEntradas] = useState(menu.entradas)
+  const [nuevaEntrada, setNuevaEntrada] = useState("")
+  const [segundos, setSegundos] = useState(menu.segundos)
+  const [editandoSegundo, setEditandoSegundo] = useState<number | null>(null)
+  const { notify } = useToast()
+
+  function agregarEntrada() {
+    if (!nuevaEntrada.trim()) return
+    const nuevas = [...entradas, nuevaEntrada.trim()]
+    setEntradas(nuevas)
+    setNuevaEntrada("")
+    onEditarEntradas(nuevas)
+  }
+
+  function eliminarEntrada(index: number) {
+    const nuevas = entradas.filter((_: string, i: number) => i !== index)
+    setEntradas(nuevas)
+    onEditarEntradas(nuevas)
+  }
+
+  function actualizarSegundo(id: number, nombre: string, stock: number) {
+    const nuevos = segundos.map((s: Segundo) =>
+      s.id === id ? { ...s, nombre, stock } : s,
+    )
+    setSegundos(nuevos)
+    onEditarSegundos(nuevos)
+    setEditandoSegundo(null)
+  }
+
+  function eliminarSegundo(id: number) {
+    const nuevos = segundos.filter((s: Segundo) => s.id !== id)
+    setSegundos(nuevos)
+    onEditarSegundos(nuevos)
+  }
+
+  return (
+    <div className="mt-6 grid gap-8 lg:grid-cols-2">
+      {/* Entradas */}
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h3 className="text-lg font-bold text-foreground">Entradas disponibles</h3>
+        <p className="text-sm text-muted-foreground">
+          Los estudiantes elegirán una para su menú
+        </p>
+
+        <div className="mt-4 space-y-2">
+          {entradas.map((entrada: string, index: number) => (
+            <div
+              key={index}
+              className="flex items-center justify-between gap-2 rounded-xl border border-input bg-background px-3 py-2.5"
+            >
+              <span className="text-sm text-foreground">{entrada}</span>
+              <button
+                onClick={() => eliminarEntrada(index)}
+                className="text-muted-foreground transition-colors hover:text-destructive"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex gap-2">
+          <input
+            type="text"
+            placeholder="Ej: Papa a la Huancaína"
+            value={nuevaEntrada}
+            onChange={(e) => setNuevaEntrada(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && agregarEntrada()}
+            className="flex-1 rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
+          />
+          <Button
+            onClick={agregarEntrada}
+            disabled={!nuevaEntrada.trim()}
+            size="sm"
+            className="rounded-xl"
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Segundos */}
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h3 className="text-lg font-bold text-foreground">Segundos disponibles</h3>
+        <p className="text-sm text-muted-foreground">
+          Gestiona el nombre y stock de cada plato fuerte
+        </p>
+
+        <div className="mt-4 space-y-3">
+          {segundos.map((segundo: Segundo) => (
+            <div
+              key={segundo.id}
+              className="flex items-center justify-between gap-2 rounded-xl border border-input bg-background px-3 py-2.5"
+            >
+              {editandoSegundo === segundo.id ? (
+                <div className="flex flex-1 gap-2">
+                  <input
+                    type="text"
+                    defaultValue={segundo.nombre}
+                    onBlur={(e) =>
+                      actualizarSegundo(segundo.id, e.target.value, segundo.stock)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        actualizarSegundo(
+                          segundo.id,
+                          (e.target as HTMLInputElement).value,
+                          segundo.stock,
+                        )
+                      }
+                    }}
+                    className="flex-1 rounded-lg border border-primary bg-primary/10 px-2 py-1 text-sm text-foreground outline-none"
+                    autoFocus
+                  />
+                  <input
+                    type="number"
+                    defaultValue={segundo.stock}
+                    onBlur={(e) =>
+                      actualizarSegundo(
+                        segundo.id,
+                        segundo.nombre,
+                        Number(e.target.value),
+                      )
+                    }
+                    className="w-16 rounded-lg border border-primary bg-primary/10 px-2 py-1 text-sm text-foreground outline-none"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      {segundo.nombre}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {segundo.stock} disponibles
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setEditandoSegundo(segundo.id)}
+                    className="text-muted-foreground transition-colors hover:text-primary"
+                  >
+                    <Utensils className="size-4" />
+                  </button>
+                  <button
+                    onClick={() => eliminarSegundo(segundo.id)}
+                    className="text-muted-foreground transition-colors hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

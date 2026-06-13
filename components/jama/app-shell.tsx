@@ -9,13 +9,20 @@ import { ToastProvider, useToast } from "@/components/jama/toast"
 import {
   cargarPlatos,
   generarCodigo,
+<<<<<<< HEAD
+  getMenuForRestaurant,
+=======
   generarIdPlato,
   guardarPlatos,
+>>>>>>> main
   PLATOS_SEMILLA,
+  RESTAURANTES_SEMILLA,
   type EstadoPedido,
   type MetodoPago,
   type Pedido,
   type Plato,
+  type RestaurantMenu,
+  type Segundo,
 } from "@/lib/jama-data"
 
 export type Role = "alumno" | "restaurante"
@@ -24,6 +31,9 @@ export type View = "landing" | "alumno" | "restaurante"
 function Shell() {
   const [view, setView] = useState<View>("landing")
   const [platos, setPlatos] = useState<Plato[]>(PLATOS_SEMILLA)
+  const [restaurantMenus, setRestaurantMenus] = useState<Record<string, RestaurantMenu>>(
+    RESTAURANTES_SEMILLA
+  )
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [ingresos, setIngresos] = useState(0)
   const { notify } = useToast()
@@ -37,49 +47,93 @@ function Shell() {
   }, [platos])
 
   const reservar = useCallback(
-    (plato: Plato, hora: string, metodoPago: MetodoPago): Pedido => {
+    (
+      plato: Plato,
+      entrada: string,
+      segundo: Segundo,
+      metodoPago: MetodoPago,
+    ): Pedido => {
+      const menu = getMenuForRestaurant(plato.restaurante)
+      if (!menu) {
+        notify({
+          tone: "info",
+          title: "Error",
+          message: "No se encontró el menú del restaurante.",
+        })
+        return null as any
+      }
+
       const pedido: Pedido = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         codigo: generarCodigo(),
-        platoId: plato.id,
-        plato: plato.nombre,
+        entrada,
+        segundo: segundo.nombre,
         restaurante: plato.restaurante,
-        precio: plato.precio,
-        hora,
+        precio: menu.precioTotal,
+        hora: "Recojo Rápido",
         modalidad: "takeout",
         metodoPago,
         estado: "recibido",
         creado: Date.now(),
       }
-      // Resta -1 al stock del plato en el estado global
-      setPlatos((prev) =>
-        prev.map((p) =>
-          p.id === plato.id ? { ...p, stock: Math.max(0, p.stock - 1) } : p,
-        ),
-      )
-      // Agrega a la lista global de pedidos activos
+
+      // Deduct stock from the restaurant's menu
+      setRestaurantMenus((prev) => ({
+        ...prev,
+        [plato.restaurante]: {
+          ...prev[plato.restaurante],
+          segundos: prev[plato.restaurante].segundos.map((s) =>
+            s.id === segundo.id ? { ...s, stock: Math.max(0, s.stock - 1) } : s,
+          ),
+        },
+      }))
+
+      // Add to global pedidos
       setPedidos((prev) => [...prev, pedido])
-      // Suma el ingreso al total del día del restaurante
-      setIngresos((prev) => prev + plato.precio)
+
+      // Update revenue
+      setIngresos((prev) => prev + menu.precioTotal)
+
       notify({
         tone: "success",
         title: "¡Reserva confirmada!",
+<<<<<<< HEAD
+        message: `${entrada} + ${segundo.nombre} en ${plato.restaurante}. Código #${pedido.codigo}.`,
+=======
         message: `${plato.nombre} — listo para recoger. Código #${pedido.codigo}.`,
+>>>>>>> main
       })
+
       return pedido
     },
     [notify],
   )
 
-  const editarPlato = useCallback(
-    (id: number, cambios: { nombre: string; precio: number; stock: number }) => {
-      setPlatos((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...cambios } : p)),
-      )
+  const editarEntradas = useCallback(
+    (restaurante: string, nuevasEntradas: string[]) => {
+      setRestaurantMenus((prev) => ({
+        ...prev,
+        [restaurante]: { ...prev[restaurante], entradas: nuevasEntradas },
+      }))
       notify({
         tone: "success",
-        title: "Menú actualizado",
-        message: `Los cambios en "${cambios.nombre}" ya son visibles para los estudiantes.`,
+        title: "Entradas actualizadas",
+        message: "Los cambios ya son visibles en el catálogo del estudiante.",
+      })
+    },
+    [notify],
+  )
+
+  const editarSegundos = useCallback(
+    (restaurante: string, nuevosSegundos: Segundo[]) => {
+      setRestaurantMenus((prev) => ({
+        ...prev,
+        [restaurante]: { ...prev[restaurante], segundos: nuevosSegundos },
+      }))
+      notify({
+        tone: "success",
+        title: "Segundos actualizados",
+        message: "Los cambios ya son visibles en el catálogo del estudiante.",
       })
     },
     [notify],
@@ -135,19 +189,28 @@ function Shell() {
           <StudentDashboard
             platos={platos}
             pedidos={pedidos}
+            restaurantMenus={restaurantMenus}
             onReservar={reservar}
             onLogout={() => setView("landing")}
           />
         )}
         {view === "restaurante" && (
           <RestaurantDashboard
-            platos={platos}
-            pedidos={pedidos}
-            ingresos={ingresos}
+            restaurante="Café Univalle"
+            menu={restaurantMenus["Café Univalle"]}
+            pedidos={pedidos.filter((p) => p.restaurante === "Café Univalle")}
+            ingresos={pedidos
+              .filter((p) => p.restaurante === "Café Univalle")
+              .reduce((sum, p) => sum + p.precio, 0)}
             onAvanzar={avanzar}
             onValidar={validar}
+<<<<<<< HEAD
+            onEditarEntradas={(entradas) => editarEntradas("Café Univalle", entradas)}
+            onEditarSegundos={(segundos) => editarSegundos("Café Univalle", segundos)}
+=======
             onEditarPlato={editarPlato}
             onAgregarPlato={agregarPlato}
+>>>>>>> main
             onLogout={() => setView("landing")}
           />
         )}

@@ -1,6 +1,6 @@
 export type Modalidad = "dine-in" | "takeout"
 export type EstadoPedido = "recibido" | "preparacion" | "listo"
-export type MetodoPago = "tarjeta" | "billetera" | "express"
+export type MetodoPago = "tarjeta" | "billetera"
 
 export interface Plato {
   id: number
@@ -13,11 +13,31 @@ export interface Plato {
   etiqueta: string
 }
 
+export interface Segundo {
+  id: number
+  nombre: string
+  stock: number
+}
+
+export interface MenuDelDia {
+  entradas: string[]
+  segundos: Segundo[]
+  precioTotal: number
+}
+
+export interface RestaurantMenu {
+  entradas: string[]
+  segundos: Segundo[]
+  precioTotal: number
+}
+
 export interface Pedido {
   id: string
   codigo: string
-  platoId: number
-  plato: string
+  platoId?: number
+  plato?: string
+  entrada?: string
+  segundo?: string
   restaurante: string
   precio: number
   hora: string
@@ -30,7 +50,6 @@ export interface Pedido {
 export const METODOS_PAGO: { id: MetodoPago; label: string }[] = [
   { id: "tarjeta", label: "Tarjeta" },
   { id: "billetera", label: "Yape / Plin" },
-  { id: "express", label: "Apple / Google Pay" },
 ]
 
 export const metodoLabel = (m: MetodoPago) =>
@@ -86,6 +105,85 @@ export const HORARIOS = [
   "13:30 - 14:00",
   "14:00 - 14:30",
 ]
+
+export const RESTAURANTES_SEMILLA: Record<string, RestaurantMenu> = {
+  "Café Univalle": {
+    entradas: [
+      "Papa a la Huancaína",
+      "Sopa Criolla",
+      "Ensalada Rusa",
+      "Ceviche de Verduras",
+    ],
+    segundos: [
+      { id: 1, nombre: "Lomo Saltado", stock: 12 },
+      { id: 2, nombre: "Ají de Gallina", stock: 8 },
+      { id: 3, nombre: "Arroz con Pollo", stock: 15 },
+      { id: 4, nombre: "Causa Limeña", stock: 0 },
+      { id: 5, nombre: "Tallarín Saltado", stock: 10 },
+    ],
+    precioTotal: 12.0,
+  },
+  "Sazón Campus": {
+    entradas: ["Ceviche de Mariscos", "Papa Rellena", "Tamal de Pollo"],
+    segundos: [
+      { id: 6, nombre: "Ceviche Mixto", stock: 14 },
+      { id: 7, nombre: "Tiradito de Salmón", stock: 9 },
+      { id: 8, nombre: "Sudado de Pez Espada", stock: 7 },
+    ],
+    precioTotal: 14.5,
+  },
+  "Verde Bowl": {
+    entradas: [
+      "Ensalada Verde",
+      "Tabla de Quesos",
+      "Hummus Casero",
+    ],
+    segundos: [
+      { id: 9, nombre: "Bowl Mediterráneo", stock: 16 },
+      { id: 10, nombre: "Bowl Asiático", stock: 11 },
+      { id: 11, nombre: "Wrap Vegano", stock: 13 },
+    ],
+    precioTotal: 11.0,
+  },
+  "Burger Lab": {
+    entradas: [
+      "Papas Rústicas",
+      "Aros de Cebolla",
+      "Nachos con Guacamole",
+    ],
+    segundos: [
+      { id: 12, nombre: "Burger Clásica", stock: 20 },
+      { id: 13, nombre: "Burger Picante", stock: 15 },
+      { id: 14, nombre: "Burger Vegana", stock: 8 },
+    ],
+    precioTotal: 10.5,
+  },
+}
+
+export const getMenuForRestaurant = (restaurante: string): RestaurantMenu | null => {
+  return RESTAURANTES_SEMILLA[restaurante] || null
+}
+
+export const getEntradosForRestaurant = (restaurante: string): string[] => {
+  return RESTAURANTES_SEMILLA[restaurante]?.entradas || []
+}
+
+export const MENU_DEL_DIA_SEMILLA: MenuDelDia = {
+  entradas: [
+    "Papa a la Huancaína",
+    "Sopa Criolla",
+    "Ensalada Rusa",
+    "Ceviche de Verduras",
+  ],
+  segundos: [
+    { id: 1, nombre: "Lomo Saltado", stock: 12 },
+    { id: 2, nombre: "Ají de Gallina", stock: 8 },
+    { id: 3, nombre: "Arroz con Pollo", stock: 15 },
+    { id: 4, nombre: "Causa Limeña", stock: 0 },
+    { id: 5, nombre: "Tallarín Saltado", stock: 10 },
+  ],
+  precioTotal: 12.0,
+}
 
 export const PLATOS_SEMILLA: Plato[] = [
   {
