@@ -20,354 +20,265 @@ import { Ticket } from "@/components/jama/ticket"
 import { useToast } from "@/components/jama/toast"
 import {
   formatPrecio,
-  HORARIOS,
-  type MenuDelDia,
+  getEntradosForRestaurant,
+  getMenuForRestaurant,
+  stockInfo,
   type MetodoPago,
   type Pedido,
+  type Plato,
+  type RestaurantMenu,
   type Segundo,
 } from "@/lib/jama-data"
 
 interface Props {
-  menu: MenuDelDia
+  platos: Plato[]
   pedidos: Pedido[]
-  onReservar: (
-    entrada: string,
-    segundo: Segundo,
-    hora: string,
-    metodoPago: MetodoPago,
-  ) => Pedido
+  restaurantMenus: Record<string, RestaurantMenu>
+  onReservar: (plato: Plato, entrada: string, segundo: Segundo, metodoPago: MetodoPago) => Pedido
   onLogout: () => void
 }
 
 export function StudentDashboard({
-  menu,
+  platos,
   pedidos,
+  restaurantMenus,
   onReservar,
   onLogout,
 }: Props) {
-  const [checkout, setCheckout] = useState<{
-    hora: string
-    entrada: string | null
-    segundo: Segundo | null
-  } | null>(null)
+  const [filtro, setFiltro] = useState<"Todos" | string>("Todos")
+  const [selectedPlato, setSelectedPlato] = useState<Plato | null>(null)
+  const [selectedEntrada, setSelectedEntrada] = useState<string>("")
+  const [selectedSegundo, setSelectedSegundo] = useState<Segundo | null>(null)
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>("tarjeta")
+  const [procesando, setProcesando] = useState(false)
   const [ticket, setTicket] = useState<Pedido | null>(null)
+  const { notify } = useToast()
 
   const misPedidos = useMemo(
     () => [...pedidos].sort((a, b) => b.creado - a.creado),
     [pedidos],
   )
 
-  // Filtrar segundos disponibles (stock > 0)
-  const segundosDisponibles = menu.segundos.filter((s) => s.stock > 0)
+  const platosEnFilas = useMemo(() => {
+    const f = filtro === "Todos" ? platos : platos.filter((p) => p.restaurante === filtro)
+    return f.sort((a, b) => a.id - b.id)
+  }, [filtro, platos])
 
-  function confirmar(metodo: MetodoPago) {
-    if (!checkout || !checkout.entrada || !checkout.segundo) return
-    const pedido = onReservar(
-      checkout.entrada,
-      checkout.segundo,
-      checkout.hora,
-      metodo,
-    )
-    setCheckout(null)
-    setTicket(pedido)
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader onLogout={onLogout} />
-
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Menú del Día</h1>
-            <p className="mt-1 text-muted-foreground">
-              Elige entrada + segundo, paga por adelantado y recoge sin filas.
-            </p>
-          </div>
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">
-            <ShoppingBag className="size-4 text-primary" />
-            {misPedidos.length} pedido{misPedidos.length === 1 ? "" : "s"} activo
-            {misPedidos.length === 1 ? "" : "s"}
-          </span>
-        </div>
-
-        {/* Card para seleccionar Entrada + Segundo + Horario */}
-        <div className="mt-8 overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
-          <div className="bg-gradient-to-r from-primary/10 to-accent/10 px-6 py-4">
-            <h2 className="font-bold text-foreground">
-              Arma tu Menú Completo
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Selecciona tu entrada y segundo favorito
-            </p>
-          </div>
-
-          <div className="grid gap-6 p-6 sm:grid-cols-3">
-            {/* Selector de Entrada */}
-            <div className="flex flex-col">
-              <label className="mb-2 text-sm font-semibold text-foreground">
-                Elige tu Entrada
-              </label>
-              <select
-                value={checkout?.entrada ?? ""}
-                onChange={(e) =>
-                  setCheckout((prev) =>
-                    prev
-                      ? { ...prev, entrada: e.target.value || null }
-                      : {
-                          hora: HORARIOS[0],
-                          entrada: e.target.value || null,
-                          segundo: null,
-                        },
-                  )
-                }
-                className="rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
-              >
-                <option value="">Selecciona una entrada...</option>
-                {menu.entradas.map((entrada) => (
-                  <option key={entrada} value={entrada}>
-                    {entrada}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Selector de Segundo */}
-            <div className="flex flex-col">
-              <label className="mb-2 text-sm font-semibold text-foreground">
-                Elige tu Segundo
-              </label>
-              <select
-                value={checkout?.segundo?.id ?? ""}
-                onChange={(e) => {
-                  const seg = segundosDisponibles.find(
-                    (s) => s.id === Number(e.target.value),
-                  )
-                  setCheckout((prev) =>
-                    prev
-                      ? { ...prev, segundo: seg || null }
-                      : {
-                          hora: HORARIOS[0],
-                          entrada: null,
-                          segundo: seg || null,
-                        },
-                  )
-                }}
-                className="rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
-              >
-                <option value="">Selecciona un segundo...</option>
-                {segundosDisponibles.map((segundo) => (
-                  <option key={segundo.id} value={segundo.id}>
-                    {segundo.nombre} ({segundo.stock} disp.)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Selector de Horario */}
-            <div className="flex flex-col">
-              <label className="mb-2 text-sm font-semibold text-foreground">
-                Horario de recojo
-              </label>
-              <select
-                value={checkout?.hora ?? HORARIOS[0]}
-                onChange={(e) =>
-                  setCheckout((prev) =>
-                    prev ? { ...prev, hora: e.target.value } : prev,
-                  )
-                }
-                className="rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
-              >
-                {HORARIOS.map((h) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Resumen y botón */}
-          <div className="border-t border-border px-6 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                {checkout?.entrada && checkout?.segundo ? (
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">
-                      {checkout.entrada}
-                    </span>{" "}
-                    +{" "}
-                    <span className="font-semibold text-foreground">
-                      {checkout.segundo.nombre}
-                    </span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Completa los campos para continuar
-                  </p>
-                )}
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-extrabold text-foreground">
-                  {formatPrecio(menu.precioTotal)}
-                </p>
-                <p className="text-xs text-muted-foreground">Menú completo</p>
-              </div>
-            </div>
-
-            <Button
-              onClick={() =>
-                checkout?.entrada &&
-                checkout?.segundo &&
-                setCheckout(checkout)
-              }
-              disabled={!checkout?.entrada || !checkout?.segundo}
-              size="lg"
-              className="mt-4 w-full rounded-xl font-semibold transition-transform hover:scale-[1.02]"
-            >
-              Continuar al Pago
-            </Button>
-          </div>
-        </div>
-
-        {misPedidos.length > 0 && (
-          <section className="mt-12">
-            <h2 className="text-xl font-bold text-foreground">Mis pedidos</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {misPedidos.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setTicket(p)}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-transform hover:scale-[1.02]"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-card-foreground">
-                      {p.entrada} + {p.segundo}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {p.hora} · #{p.codigo}
-                    </p>
-                  </div>
-                  <EstadoBadge estado={p.estado} />
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
-
-      {checkout?.entrada && checkout?.segundo && (
-        <CheckoutModal
-          entrada={checkout.entrada}
-          segundo={checkout.segundo}
-          hora={checkout.hora}
-          precioTotal={menu.precioTotal}
-          onClose={() => setCheckout(null)}
-          onConfirm={confirmar}
-        />
-      )}
-
-      {ticket && <Ticket pedido={ticket} onClose={() => setTicket(null)} />}
-    </div>
+  const restaurantes = useMemo(
+    () => ["Todos", ...new Set(platos.map((p) => p.restaurante))],
+    [platos],
   )
-}
 
-function DashboardHeader({ onLogout }: { onLogout: () => void }) {
-  return (
-    <header className="sticky top-12 z-40 border-b border-border bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
-          <JamaLogo />
-          <span className="hidden rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary sm:inline">
-            Panel del Estudiante
-          </span>
-        </div>
-        <Button
-          variant="outline"
-          onClick={onLogout}
-          className="rounded-full font-medium transition-transform hover:scale-[1.02]"
-        >
-          <LogOut className="size-4" />
-          Cerrar Sesión
-        </Button>
-      </div>
-    </header>
-  )
-}
+  function confirmarReserva() {
+    if (!selectedPlato || !selectedEntrada || !selectedSegundo) {
+      notify({
+        tone: "info",
+        title: "Campos incompletos",
+        message: "Debes seleccionar entrada y segundo.",
+      })
+      return
+    }
 
-function EstadoBadge({ estado }: { estado: Pedido["estado"] }) {
-  const config: Record<
-    Pedido["estado"],
-    { bg: string; text: string; label: string }
-  > = {
-    recibido: {
-      bg: "bg-blue-100",
-      text: "text-blue-700",
-      label: "En cocina",
-    },
-    preparacion: {
-      bg: "bg-yellow-100",
-      text: "text-yellow-700",
-      label: "Preparando",
-    },
-    listo: {
-      bg: "bg-green-100",
-      text: "text-green-700",
-      label: "¡Listo!",
-    },
-  }
-
-  const { bg, text, label } = config[estado]
-
-  return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${bg} ${text}`}>
-      {label}
-    </span>
-  )
-}
-
-function CheckoutModal({
-  entrada,
-  segundo,
-  hora,
-  precioTotal,
-  onClose,
-  onConfirm,
-}: {
-  entrada: string
-  segundo: { id: number; nombre: string; stock: number }
-  hora: string
-  precioTotal: number
-  onClose: () => void
-  onConfirm: (metodo: MetodoPago) => void
-}) {
-  const [metodo, setMetodo] = useState<MetodoPago>("tarjeta")
-  const [procesando, setProcesando] = useState(false)
-  const { notify } = useToast()
-
-  const mensajes: Record<MetodoPago, string> = {
-    tarjeta: "Validando tu tarjeta",
-    billetera: "Confirmando pago Yape/Plin",
-    express: "Autorizando pago express",
-  }
-
-  function pagar() {
     setProcesando(true)
     notify({
       tone: "info",
       title: "Procesando pago...",
-      message: `${mensajes[metodo]} para ${entrada} + ${segundo.nombre}.`,
+      message: `Validando tu ${metodoPago === "tarjeta" ? "tarjeta" : "Yape/Plin"}.`,
     })
-    setTimeout(() => onConfirm(metodo), 1300)
+
+    setTimeout(() => {
+      const pedido = onReservar(selectedPlato, selectedEntrada, selectedSegundo, metodoPago)
+      setTicket(pedido)
+      setSelectedPlato(null)
+      setSelectedEntrada("")
+      setSelectedSegundo(null)
+      setProcesando(false)
+    }, 1300)
   }
+
+  if (ticket) {
+    return (
+      <main className="min-h-screen bg-background py-8">
+        <div className="mx-auto max-w-md px-4 sm:px-6">
+          <Ticket
+            pedido={ticket}
+            onClose={() => {
+              setTicket(null)
+              setFiltro("Todos")
+            }}
+          />
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen bg-background pb-20">
+      <header className="sticky top-12 z-40 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <JamaLogo />
+              <h1 className="text-xl font-bold text-foreground">Catálogo del Campus</h1>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onLogout}
+              className="rounded-full"
+            >
+              <LogOut className="size-4" />
+              Cerrar sesión
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <div className="mb-8">
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+            Filtrar por restaurante
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {restaurantes.map((rest) => (
+              <button
+                key={rest}
+                onClick={() => setFiltro(rest)}
+                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all ${
+                  filtro === rest
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                }`}
+              >
+                {rest}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {platosEnFilas.map((plato) => (
+            <PlatoCard
+              key={plato.id}
+              plato={plato}
+              onSelect={() => {
+                setSelectedPlato(plato)
+                setSelectedEntrada("")
+                setSelectedSegundo(null)
+              }}
+            />
+          ))}
+        </div>
+
+        {selectedPlato && (
+          <ReservaModal
+            plato={selectedPlato}
+            restaurantMenus={restaurantMenus}
+            selectedEntrada={selectedEntrada}
+            selectedSegundo={selectedSegundo}
+            metodoPago={metodoPago}
+            procesando={procesando}
+            onEntradaChange={setSelectedEntrada}
+            onSegundoChange={setSelectedSegundo}
+            onMetodoPagoChange={setMetodoPago}
+            onConfirmar={confirmarReserva}
+            onClose={() => {
+              setSelectedPlato(null)
+              setSelectedEntrada("")
+              setSelectedSegundo(null)
+            }}
+          />
+        )}
+      </div>
+    </main>
+  )
+}
+
+function PlatoCard({ plato, onSelect }: { plato: Plato; onSelect: () => void }) {
+  const info = stockInfo(plato.stock)
+
+  return (
+    <article
+      onClick={onSelect}
+      className="flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-all hover:shadow-lg hover:shadow-black/5 hover:scale-[1.02]"
+    >
+      <div className="relative h-40 overflow-hidden">
+        <img
+          src={plato.imagen || "/placeholder.svg"}
+          alt={plato.nombre}
+          className="size-full object-cover transition-transform hover:scale-105"
+          crossOrigin="anonymous"
+        />
+        <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur">
+          {plato.etiqueta}
+        </span>
+        <div className="absolute right-3 top-3 rounded-full bg-primary/90 px-3 py-1 text-xs font-bold text-primary-foreground backdrop-blur">
+          {plato.restaurante}
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="font-bold text-card-foreground">{plato.nombre}</h3>
+        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+          {plato.descripcion}
+        </p>
+        <div className="mt-auto flex items-center justify-between pt-3">
+          <span className="font-bold text-foreground">{formatPrecio(plato.precio)}</span>
+          <span
+            className={`text-xs font-semibold px-2 py-1 rounded-full ${
+              info.tone === "success"
+                ? "bg-success/10 text-success"
+                : info.tone === "warning"
+                  ? "bg-warning/10 text-warning"
+                  : "bg-destructive/10 text-destructive"
+            }`}
+          >
+            {info.label}
+          </span>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function ReservaModal({
+  plato,
+  restaurantMenus,
+  selectedEntrada,
+  selectedSegundo,
+  metodoPago,
+  procesando,
+  onEntradaChange,
+  onSegundoChange,
+  onMetodoPagoChange,
+  onConfirmar,
+  onClose,
+}: {
+  plato: Plato
+  restaurantMenus: Record<string, RestaurantMenu>
+  selectedEntrada: string
+  selectedSegundo: Segundo | null
+  metodoPago: MetodoPago
+  procesando: boolean
+  onEntradaChange: (entrada: string) => void
+  onSegundoChange: (segundo: Segundo | null) => void
+  onMetodoPagoChange: (metodo: MetodoPago) => void
+  onConfirmar: () => void
+  onClose: () => void
+}) {
+  const menu = getMenuForRestaurant(plato.restaurante)
+  if (!menu) return null
+
+  const entradas = menu.entradas
+  const segundosDisponibles = menu.segundos.filter((s) => s.stock > 0)
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4 backdrop-blur-sm sm:items-center">
       <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-card shadow-2xl animate-in fade-in slide-in-from-bottom-4">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card p-5">
           <h3 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
-            <Lock className="size-5 text-primary" />
-            Pago seguro
+            <ShoppingBag className="size-5 text-primary" />
+            Armar tu menú
           </h3>
           <button
             onClick={onClose}
@@ -378,66 +289,97 @@ function CheckoutModal({
           </button>
         </div>
 
-        <div className="p-5">
-          <div className="flex flex-col gap-3 rounded-2xl bg-secondary p-4">
-            <div>
-              <p className="text-xs text-muted-foreground">Entrada</p>
-              <p className="font-semibold text-card-foreground">{entrada}</p>
+        <div className="p-5 space-y-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-secondary p-3">
+            <img
+              src={plato.imagen || "/placeholder.svg"}
+              alt={plato.nombre}
+              className="size-12 rounded-xl object-cover"
+              crossOrigin="anonymous"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold text-card-foreground">{plato.nombre}</p>
+              <p className="text-xs text-muted-foreground">{plato.restaurante}</p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Segundo</p>
-              <p className="font-semibold text-card-foreground">
-                {segundo.nombre}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Horario de recojo</p>
-              <p className="font-semibold text-card-foreground">{hora}</p>
-            </div>
+            <span className="font-bold text-foreground">{formatPrecio(plato.precio)}</span>
           </div>
 
-          <div className="mt-5">
-            <p className="mb-2 text-sm font-semibold text-card-foreground">
-              Elige tu método de pago
-            </p>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-muted-foreground">
+              Elige tu entrada
+            </label>
+            <select
+              value={selectedEntrada}
+              onChange={(e) => onEntradaChange(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Selecciona una entrada...</option>
+              {entradas.map((entrada) => (
+                <option key={entrada} value={entrada}>
+                  {entrada}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-muted-foreground">
+              Elige tu segundo (plato fuerte)
+            </label>
+            <select
+              value={selectedSegundo?.id || ""}
+              onChange={(e) => {
+                const id = parseInt(e.target.value)
+                const segundo = segundosDisponibles.find((s) => s.id === id)
+                onSegundoChange(segundo || null)
+              }}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Selecciona un segundo...</option>
+              {segundosDisponibles.map((segundo) => (
+                <option key={segundo.id} value={segundo.id}>
+                  {segundo.nombre} ({segundo.stock} disponibles)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="rounded-2xl bg-secondary p-3 text-sm flex items-center gap-2">
+            <Package className="size-4 text-primary" />
+            <span className="font-semibold text-card-foreground">Modalidad: Recojo Rápido (Para Llevar)</span>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-card-foreground">Método de pago</p>
+            <div className="grid grid-cols-2 gap-2">
               <MetodoTab
-                active={metodo === "tarjeta"}
-                onClick={() => setMetodo("tarjeta")}
+                active={metodoPago === "tarjeta"}
+                onClick={() => onMetodoPagoChange("tarjeta")}
                 icon={<CreditCard className="size-5" />}
                 label="Tarjeta"
               />
               <MetodoTab
-                active={metodo === "billetera"}
-                onClick={() => setMetodo("billetera")}
+                active={metodoPago === "billetera"}
+                onClick={() => onMetodoPagoChange("billetera")}
                 icon={<Wallet className="size-5" />}
                 label="Yape / Plin"
-              />
-              <MetodoTab
-                active={metodo === "express"}
-                onClick={() => setMetodo("express")}
-                icon={<Apple className="size-5" />}
-                label="Apple / G Pay"
               />
             </div>
           </div>
 
-          <div className="mt-4">
-            {metodo === "tarjeta" && <PanelTarjeta />}
-            {metodo === "billetera" && <PanelBilletera />}
-            {metodo === "express" && <PanelExpress />}
-          </div>
-
           <Button
-            onClick={pagar}
-            disabled={procesando}
+            onClick={onConfirmar}
+            disabled={
+              procesando || !selectedEntrada || !selectedSegundo
+            }
             size="lg"
-            className="mt-5 w-full rounded-xl font-semibold transition-transform hover:scale-[1.02]"
+            className="w-full rounded-xl font-semibold transition-transform hover:scale-[1.02]"
           >
             <Lock className="size-5" />
-            {procesando ? "Procesando..." : `Pagar ${formatPrecio(precioTotal)}`}
+            {procesando ? "Procesando..." : `Reservar y Pagar ${formatPrecio(plato.precio)}`}
           </Button>
-          <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+
+          <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
             <Lock className="size-3" />
             Transacción cifrada · Demo simulada
           </p>
@@ -463,7 +405,7 @@ function MetodoTab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-3 text-center text-xs font-semibold transition-all ${
+      className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border px-3 py-2 text-center text-xs font-semibold transition-all ${
         active
           ? "border-primary bg-primary/10 text-primary"
           : "border-input bg-background text-muted-foreground hover:border-primary/50"
@@ -472,106 +414,5 @@ function MetodoTab({
       {icon}
       {label}
     </button>
-  )
-}
-
-function PanelTarjeta() {
-  return (
-    <div className="space-y-3 rounded-2xl border border-border bg-background p-4 animate-in fade-in">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-card-foreground">
-          Tarjeta de crédito / débito
-        </span>
-        <span className="flex gap-1">
-          <span className="rounded bg-[oklch(0.45_0.12_265)] px-1.5 py-0.5 text-[10px] font-bold text-white">
-            VISA
-          </span>
-          <span className="rounded bg-warning px-1.5 py-0.5 text-[10px] font-bold text-warning-foreground">
-            MC
-          </span>
-        </span>
-      </div>
-      <FakeField label="Número de tarjeta" value="4082  ····  ····  7311" />
-      <div className="grid grid-cols-2 gap-3">
-        <FakeField label="Vence" value="08/29" />
-        <FakeField label="CVV" value="···" />
-      </div>
-    </div>
-  )
-}
-
-function PanelBilletera() {
-  return (
-    <div className="rounded-2xl border border-border bg-background p-4 text-center animate-in fade-in">
-      <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-card-foreground">
-        <Smartphone className="size-4 text-primary" />
-        Escanea con Yape o Plin
-      </p>
-      <div className="mx-auto mt-3 w-32">
-        <MiniQr seed="YAPE-JAMA-PAGO" />
-      </div>
-      <p className="mt-3 text-xs text-muted-foreground">
-        O envía al número
-      </p>
-      <p className="font-mono text-lg font-bold text-foreground">987 654 321</p>
-    </div>
-  )
-}
-
-function PanelExpress() {
-  return (
-    <div className="space-y-2 rounded-2xl border border-border bg-background p-4 animate-in fade-in">
-      <p className="text-center text-sm text-muted-foreground">
-        Paga en un toque con tu billetera del dispositivo.
-      </p>
-      <div className="flex items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-background">
-        <Apple className="size-5" />
-        <span className="font-semibold">Apple Pay</span>
-      </div>
-      <div className="flex items-center justify-center gap-2 rounded-xl border border-input py-3 text-foreground">
-        <Smartphone className="size-5 text-primary" />
-        <span className="font-semibold">Google Pay</span>
-      </div>
-    </div>
-  )
-}
-
-function MiniQr({ seed }: { seed: string }) {
-  const size = 13
-  let h = 0
-  for (let i = 0; i < seed.length; i++) {
-    h = (h << 5) - h + seed.charCodeAt(i)
-    h |= 0
-  }
-  const cells: boolean[] = []
-  let state = Math.abs(h) || 1
-  for (let i = 0; i < size * size; i++) {
-    state = (state * 1103515245 + 12345) & 0x7fffffff
-    cells.push((state >> 8) % 2 === 0)
-  }
-  return (
-    <div
-      className="grid overflow-hidden rounded-md bg-white p-1.5"
-      style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
-      role="img"
-      aria-label="Código QR de pago simulado"
-    >
-      {cells.map((on, i) => (
-        <span
-          key={i}
-          className={on ? "bg-foreground" : "bg-white"}
-          style={{ aspectRatio: "1 / 1" }}
-        />
-      ))}
-    </div>
-  )
-}
-
-function FakeField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-input bg-card px-4 py-2.5">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="font-mono text-sm text-foreground">{value}</p>
-    </div>
   )
 }

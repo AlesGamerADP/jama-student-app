@@ -8,13 +8,14 @@ import { ViewSwitcher } from "@/components/jama/view-switcher"
 import { ToastProvider, useToast } from "@/components/jama/toast"
 import {
   generarCodigo,
-  MENU_DEL_DIA_SEMILLA,
+  getMenuForRestaurant,
   PLATOS_SEMILLA,
+  RESTAURANTES_SEMILLA,
   type EstadoPedido,
-  type MenuDelDia,
   type MetodoPago,
   type Pedido,
   type Plato,
+  type RestaurantMenu,
   type Segundo,
 } from "@/lib/jama-data"
 
@@ -24,69 +25,78 @@ export type View = "landing" | "alumno" | "restaurante"
 function Shell() {
   const [view, setView] = useState<View>("landing")
   const [platos, setPlatos] = useState<Plato[]>(PLATOS_SEMILLA)
-  const [menu, setMenu] = useState<MenuDelDia>(MENU_DEL_DIA_SEMILLA)
+  const [restaurantMenus, setRestaurantMenus] = useState<Record<string, RestaurantMenu>>(
+    RESTAURANTES_SEMILLA
+  )
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [ingresos, setIngresos] = useState(0)
   const { notify } = useToast()
 
   const reservar = useCallback(
     (
+      plato: Plato,
       entrada: string,
       segundo: Segundo,
-      hora: string,
       metodoPago: MetodoPago,
     ): Pedido => {
+      const menu = getMenuForRestaurant(plato.restaurante)
+      if (!menu) {
+        notify({
+          tone: "info",
+          title: "Error",
+          message: "No se encontró el menú del restaurante.",
+        })
+        return null as any
+      }
+
       const pedido: Pedido = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         codigo: generarCodigo(),
         entrada,
         segundo: segundo.nombre,
-        restaurante: "Café Univalle",
+        restaurante: plato.restaurante,
         precio: menu.precioTotal,
-        hora,
+        hora: "Recojo Rápido",
         modalidad: "takeout",
         metodoPago,
         estado: "recibido",
         creado: Date.now(),
       }
-      // Resta -1 al stock del segundo elegido
-      setMenu((prev) => ({
+
+      // Deduct stock from the restaurant's menu
+      setRestaurantMenus((prev) => ({
         ...prev,
-        segundos: prev.segundos.map((s) =>
-          s.id === segundo.id ? { ...s, stock: Math.max(0, s.stock - 1) } : s,
-        ),
+        [plato.restaurante]: {
+          ...prev[plato.restaurante],
+          segundos: prev[plato.restaurante].segundos.map((s) =>
+            s.id === segundo.id ? { ...s, stock: Math.max(0, s.stock - 1) } : s,
+          ),
+        },
       }))
-      // Agrega el pedido a la lista global
+
+      // Add to global pedidos
       setPedidos((prev) => [...prev, pedido])
-      // Suma el ingreso
+
+      // Update revenue
       setIngresos((prev) => prev + menu.precioTotal)
+
       notify({
         tone: "success",
         title: "¡Reserva confirmada!",
-        message: `${entrada} + ${segundo.nombre} — recojo ${hora}. Código #${pedido.codigo}.`,
+        message: `${entrada} + ${segundo.nombre} en ${plato.restaurante}. Código #${pedido.codigo}.`,
       })
-      return pedido
-    },
-    [menu, notify],
-  )
 
-  const editarPlato = useCallback(
-    (id: number, cambios: { nombre: string; precio: number; stock: number }) => {
-      setPlatos((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...cambios } : p)),
-      )
-      notify({
-        tone: "success",
-        title: "Menú actualizado",
-        message: `Los cambios en "${cambios.nombre}" ya son visibles para los estudiantes.`,
-      })
+      return pedido
     },
     [notify],
   )
 
   const editarEntradas = useCallback(
-    (nuevasEntradas: string[]) => {
-      setMenu((prev) => ({ ...prev, entradas: nuevasEntradas }))
+    (restaurante: string, nuevasEntradas: string[]) => {
+      setRestaurantMenus((prev) => ({
+        ...prev,
+        [restaurante]: { ...prev[restaurante], entradas: nuevasEntradas },
+      }))
       notify({
         tone: "success",
         title: "Entradas actualizadas",
@@ -97,8 +107,11 @@ function Shell() {
   )
 
   const editarSegundos = useCallback(
-    (nuevosSegundos: Segundo[]) => {
-      setMenu((prev) => ({ ...prev, segundos: nuevosSegundos }))
+    (restaurante: string, nuevosSegundos: Segundo[]) => {
+      setRestaurantMenus((prev) => ({
+        ...prev,
+        [restaurante]: { ...prev[restaurante], segundos: nuevosSegundos },
+      }))
       notify({
         tone: "success",
         title: "Segundos actualizados",
@@ -143,23 +156,25 @@ function Shell() {
       <div className="pt-12">
         {view === "alumno" && (
           <StudentDashboard
-            menu={menu}
+            platos={platos}
             pedidos={pedidos}
+            restaurantMenus={restaurantMenus}
             onReservar={reservar}
             onLogout={() => setView("landing")}
           />
         )}
         {view === "restaurante" && (
           <RestaurantDashboard
-            menu={menu}
-            platos={platos}
-            pedidos={pedidos}
-            ingresos={ingresos}
+            restaurante="Café Univalle"
+            menu={restaurantMenus["Café Univalle"]}
+            pedidos={pedidos.filter((p) => p.restaurante === "Café Univalle")}
+            ingresos={pedidos
+              .filter((p) => p.restaurante === "Café Univalle")
+              .reduce((sum, p) => sum + p.precio, 0)}
             onAvanzar={avanzar}
             onValidar={validar}
-            onEditarPlato={editarPlato}
-            onEditarEntradas={editarEntradas}
-            onEditarSegundos={editarSegundos}
+            onEditarEntradas={(entradas) => editarEntradas("Café Univalle", entradas)}
+            onEditarSegundos={(segundos) => editarSegundos("Café Univalle", segundos)}
             onLogout={() => setView("landing")}
           />
         )}

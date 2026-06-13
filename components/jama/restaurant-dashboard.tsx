@@ -19,36 +19,30 @@ import { useToast } from "@/components/jama/toast"
 import {
   formatPrecio,
   type EstadoPedido,
-  type MenuDelDia,
   type Pedido,
-  type Plato,
+  type RestaurantMenu,
   type Segundo,
 } from "@/lib/jama-data"
 
 interface Props {
-  menu: MenuDelDia
-  platos: Plato[]
+  restaurante: string
+  menu: RestaurantMenu
   pedidos: Pedido[]
   ingresos: number
   onAvanzar: (id: string, estado: EstadoPedido) => void
   onValidar: (codigo: string) => boolean
-  onEditarPlato: (
-    id: number,
-    cambios: { nombre: string; precio: number; stock: number },
-  ) => void
   onEditarEntradas: (entradas: string[]) => void
   onEditarSegundos: (segundos: Segundo[]) => void
   onLogout: () => void
 }
 
 export function RestaurantDashboard({
+  restaurante,
   menu,
-  platos,
   pedidos,
   ingresos,
   onAvanzar,
   onValidar,
-  onEditarPlato,
   onEditarEntradas,
   onEditarSegundos,
   onLogout,
@@ -76,7 +70,7 @@ export function RestaurantDashboard({
           <div className="flex items-center gap-3">
             <JamaLogo />
             <span className="hidden rounded-full bg-accent/40 px-3 py-1 text-xs font-semibold text-accent-foreground sm:inline">
-              Panel del Restaurante
+              {restaurante}
             </span>
           </div>
           <Button
@@ -354,7 +348,7 @@ function MenuManager({
   onEditarEntradas,
   onEditarSegundos,
 }: {
-  menu: MenuDelDia
+  menu: RestaurantMenu
   onEditarEntradas: (entradas: string[]) => void
   onEditarSegundos: (segundos: Segundo[]) => void
 }) {
@@ -373,13 +367,13 @@ function MenuManager({
   }
 
   function eliminarEntrada(index: number) {
-    const nuevas = entradas.filter((_, i) => i !== index)
+    const nuevas = entradas.filter((_: string, i: number) => i !== index)
     setEntradas(nuevas)
     onEditarEntradas(nuevas)
   }
 
   function actualizarSegundo(id: number, nombre: string, stock: number) {
-    const nuevos = segundos.map((s) =>
+    const nuevos = segundos.map((s: Segundo) =>
       s.id === id ? { ...s, nombre, stock } : s,
     )
     setSegundos(nuevos)
@@ -388,7 +382,7 @@ function MenuManager({
   }
 
   function eliminarSegundo(id: number) {
-    const nuevos = segundos.filter((s) => s.id !== id)
+    const nuevos = segundos.filter((s: Segundo) => s.id !== id)
     setSegundos(nuevos)
     onEditarSegundos(nuevos)
   }
@@ -403,7 +397,7 @@ function MenuManager({
         </p>
 
         <div className="mt-4 space-y-2">
-          {entradas.map((entrada, index) => (
+          {entradas.map((entrada: string, index: number) => (
             <div
               key={index}
               className="flex items-center justify-between gap-2 rounded-xl border border-input bg-background px-3 py-2.5"
@@ -447,7 +441,7 @@ function MenuManager({
         </p>
 
         <div className="mt-4 space-y-3">
-          {segundos.map((segundo) => (
+          {segundos.map((segundo: Segundo) => (
             <div
               key={segundo.id}
               className="flex items-center justify-between gap-2 rounded-xl border border-input bg-background px-3 py-2.5"
