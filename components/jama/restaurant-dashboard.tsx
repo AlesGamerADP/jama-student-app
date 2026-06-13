@@ -1,21 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import {
-  CheckCircle2,
-  ChefHat,
-  ClipboardList,
-  Clock,
-  Package,
-  Pencil,
-  Plus,
-  ScanLine,
-  Store,
-  TrendingUp,
-  Utensils,
-  Wallet,
-  X,
-} from "lucide-react"
+import { CircleCheck as CheckCircle2, ChefHat, ClipboardList, Clock, Package, Pencil, Plus, ScanLine, Store, TrendingUp, Utensils, Wallet, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { JamaLogo } from "@/components/jama/logo"
 import { useToast } from "@/components/jama/toast"
