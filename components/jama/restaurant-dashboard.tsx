@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { CircleCheck as CheckCircle2, ChefHat, ClipboardList, Clock, Package, Pencil, Plus, ScanLine, Store, TrendingUp, Utensils, Wallet, X } from "lucide-react"
+import { CircleCheck as CheckCircle2, ChefHat, ClipboardList, Clock, Image as ImageIcon, Package, Pencil, Plus, ScanLine, Store, TrendingUp, Utensils, Wallet, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { JamaLogo } from "@/components/jama/logo"
 import { useToast } from "@/components/jama/toast"
@@ -479,6 +479,19 @@ function AddPlatoForm({
   const [restaurante, setRestaurante] = useState("")
   const [etiqueta, setEtiqueta] = useState("")
   const [imagen, setImagen] = useState("")
+  const [imagenPreview, setImagenPreview] = useState<string | null>(null)
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string
+      setImagen(base64)
+      setImagenPreview(base64)
+    }
+    reader.readAsDataURL(file)
+  }
 
   function guardar(e: React.FormEvent) {
     e.preventDefault()
@@ -498,7 +511,7 @@ function AddPlatoForm({
       stock: Math.max(0, stockNum),
       restaurante: restaurante.trim(),
       etiqueta: etiqueta.trim() || "Nuevo",
-      imagen: imagen.trim() || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop",
+      imagen: imagen || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop",
     })
   }
 
@@ -595,15 +608,52 @@ function AddPlatoForm({
         </label>
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-card-foreground">
-            URL de imagen
+            Imagen del plato
           </span>
-          <input
-            type="url"
-            value={imagen}
-            onChange={(e) => setImagen(e.target.value)}
-            placeholder="https://..."
-            className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-          />
+          <div className="flex items-center gap-3">
+            {imagenPreview ? (
+              <div className="relative">
+                <img
+                  src={imagenPreview}
+                  alt="Vista previa"
+                  className="size-16 rounded-xl object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImagen("")
+                    setImagenPreview(null)
+                  }}
+                  className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-destructive text-white"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ) : (
+              <span className="flex size-16 items-center justify-center rounded-xl border-2 border-dashed border-input bg-secondary">
+                <ImageIcon className="size-6 text-muted-foreground" />
+              </span>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+              id="imagen-plato"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => document.getElementById("imagen-plato")?.click()}
+              className="rounded-xl"
+            >
+              <ImageIcon className="size-4" />
+              {imagenPreview ? "Cambiar imagen" : "Subir imagen"}
+            </Button>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Selecciona una imagen de tu dispositivo (JPG, PNG, WebP)
+          </p>
         </label>
         <div className="flex gap-3 md:col-span-2">
           <Button
