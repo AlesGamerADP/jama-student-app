@@ -1,6 +1,6 @@
 export type Modalidad = "dine-in" | "takeout"
 export type EstadoPedido = "recibido" | "preparacion" | "listo"
-export type MetodoPago = "tarjeta" | "billetera" | "express"
+export type MetodoPago = "tarjeta" | "billetera"
 
 export interface Plato {
   id: number
@@ -18,6 +18,7 @@ export interface Pedido {
   codigo: string
   platoId: number
   plato: string
+  entrada: string
   restaurante: string
   precio: number
   hora: string
@@ -30,7 +31,6 @@ export interface Pedido {
 export const METODOS_PAGO: { id: MetodoPago; label: string }[] = [
   { id: "tarjeta", label: "Tarjeta" },
   { id: "billetera", label: "Yape / Plin" },
-  { id: "express", label: "Apple / Google Pay" },
 ]
 
 export const metodoLabel = (m: MetodoPago) =>
@@ -86,6 +86,36 @@ export const HORARIOS = [
   "13:30 - 14:00",
   "14:00 - 14:30",
 ]
+
+export interface RestaurantMenu {
+  restaurante: string
+  entradas: string[]
+  segundos: Plato[]
+}
+
+export const RESTAURANT_ENTRADAS: Record<string, string[]> = {
+  "Café Univalle": [
+    "Papa a la Huancaína",
+    "Sopa Criolla",
+    "Ensalada Rusa",
+  ],
+  "Sazón Campus": [
+    "Ceviche de Mariscos",
+    "Papa Rellena",
+  ],
+  "Verde Bowl": [
+    "Ensalada Verde",
+    "Tabla de Quesos",
+  ],
+  "Burger Lab": [
+    "Papas Rústicas",
+    "Aros de Cebolla",
+  ],
+}
+
+export const getEntradas = (restaurante: string): string[] => {
+  return RESTAURANT_ENTRADAS[restaurante] || []
+}
 
 export const PLATOS_SEMILLA: Plato[] = [
   {

@@ -37,15 +37,16 @@ function Shell() {
   }, [platos])
 
   const reservar = useCallback(
-    (plato: Plato, hora: string, metodoPago: MetodoPago): Pedido => {
+    (plato: Plato, entrada: string, metodoPago: MetodoPago): Pedido => {
       const pedido: Pedido = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         codigo: generarCodigo(),
         platoId: plato.id,
         plato: plato.nombre,
+        entrada,
         restaurante: plato.restaurante,
         precio: plato.precio,
-        hora,
+        hora: "Recojo Rápido",
         modalidad: "takeout",
         metodoPago,
         estado: "recibido",
@@ -64,7 +65,7 @@ function Shell() {
       notify({
         tone: "success",
         title: "¡Reserva confirmada!",
-        message: `${plato.nombre} — listo para recoger. Código #${pedido.codigo}.`,
+        message: `${entrada} + ${plato.nombre} en ${plato.restaurante}. Código #${pedido.codigo}.`,
       })
       return pedido
     },
