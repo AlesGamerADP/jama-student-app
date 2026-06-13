@@ -13,11 +13,25 @@ export interface Plato {
   etiqueta: string
 }
 
+export interface Segundo {
+  id: number
+  nombre: string
+  stock: number
+}
+
+export interface MenuDelDia {
+  entradas: string[]
+  segundos: Segundo[]
+  precioTotal: number
+}
+
 export interface Pedido {
   id: string
   codigo: string
-  platoId: number
-  plato: string
+  platoId?: number
+  plato?: string
+  entrada?: string
+  segundo?: string
   restaurante: string
   precio: number
   hora: string
@@ -86,6 +100,23 @@ export const HORARIOS = [
   "13:30 - 14:00",
   "14:00 - 14:30",
 ]
+
+export const MENU_DEL_DIA_SEMILLA: MenuDelDia = {
+  entradas: [
+    "Papa a la Huancaína",
+    "Sopa Criolla",
+    "Ensalada Rusa",
+    "Ceviche de Verduras",
+  ],
+  segundos: [
+    { id: 1, nombre: "Lomo Saltado", stock: 12 },
+    { id: 2, nombre: "Ají de Gallina", stock: 8 },
+    { id: 3, nombre: "Arroz con Pollo", stock: 15 },
+    { id: 4, nombre: "Causa Limeña", stock: 0 },
+    { id: 5, nombre: "Tallarín Saltado", stock: 10 },
+  ],
+  precioTotal: 12.0,
+}
 
 export const PLATOS_SEMILLA: Plato[] = [
   {

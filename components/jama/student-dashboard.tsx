@@ -21,28 +21,34 @@ import { useToast } from "@/components/jama/toast"
 import {
   formatPrecio,
   HORARIOS,
-  stockInfo,
+  type MenuDelDia,
   type MetodoPago,
   type Pedido,
-  type Plato,
+  type Segundo,
 } from "@/lib/jama-data"
 
 interface Props {
-  platos: Plato[]
+  menu: MenuDelDia
   pedidos: Pedido[]
-  onReservar: (plato: Plato, hora: string, metodoPago: MetodoPago) => Pedido
+  onReservar: (
+    entrada: string,
+    segundo: Segundo,
+    hora: string,
+    metodoPago: MetodoPago,
+  ) => Pedido
   onLogout: () => void
 }
 
 export function StudentDashboard({
-  platos,
+  menu,
   pedidos,
   onReservar,
   onLogout,
 }: Props) {
   const [checkout, setCheckout] = useState<{
-    plato: Plato
     hora: string
+    entrada: string | null
+    segundo: Segundo | null
   } | null>(null)
   const [ticket, setTicket] = useState<Pedido | null>(null)
 
@@ -51,9 +57,17 @@ export function StudentDashboard({
     [pedidos],
   )
 
+  // Filtrar segundos disponibles (stock > 0)
+  const segundosDisponibles = menu.segundos.filter((s) => s.stock > 0)
+
   function confirmar(metodo: MetodoPago) {
-    if (!checkout) return
-    const pedido = onReservar(checkout.plato, checkout.hora, metodo)
+    if (!checkout || !checkout.entrada || !checkout.segundo) return
+    const pedido = onReservar(
+      checkout.entrada,
+      checkout.segundo,
+      checkout.hora,
+      metodo,
+    )
     setCheckout(null)
     setTicket(pedido)
   }
@@ -67,7 +81,7 @@ export function StudentDashboard({
           <div>
             <h1 className="text-3xl font-bold text-foreground">Menú del Día</h1>
             <p className="mt-1 text-muted-foreground">
-              Reserva, paga por adelantado y recoge sin filas.
+              Elige entrada + segundo, paga por adelantado y recoge sin filas.
             </p>
           </div>
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">
@@ -77,14 +91,143 @@ export function StudentDashboard({
           </span>
         </div>
 
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {platos.map((plato) => (
-            <PlatoCard
-              key={plato.id}
-              plato={plato}
-              onReservar={(hora) => setCheckout({ plato, hora })}
-            />
-          ))}
+        {/* Card para seleccionar Entrada + Segundo + Horario */}
+        <div className="mt-8 overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
+          <div className="bg-gradient-to-r from-primary/10 to-accent/10 px-6 py-4">
+            <h2 className="font-bold text-foreground">
+              Arma tu Menú Completo
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Selecciona tu entrada y segundo favorito
+            </p>
+          </div>
+
+          <div className="grid gap-6 p-6 sm:grid-cols-3">
+            {/* Selector de Entrada */}
+            <div className="flex flex-col">
+              <label className="mb-2 text-sm font-semibold text-foreground">
+                Elige tu Entrada
+              </label>
+              <select
+                value={checkout?.entrada ?? ""}
+                onChange={(e) =>
+                  setCheckout((prev) =>
+                    prev
+                      ? { ...prev, entrada: e.target.value || null }
+                      : {
+                          hora: HORARIOS[0],
+                          entrada: e.target.value || null,
+                          segundo: null,
+                        },
+                  )
+                }
+                className="rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Selecciona una entrada...</option>
+                {menu.entradas.map((entrada) => (
+                  <option key={entrada} value={entrada}>
+                    {entrada}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Selector de Segundo */}
+            <div className="flex flex-col">
+              <label className="mb-2 text-sm font-semibold text-foreground">
+                Elige tu Segundo
+              </label>
+              <select
+                value={checkout?.segundo?.id ?? ""}
+                onChange={(e) => {
+                  const seg = segundosDisponibles.find(
+                    (s) => s.id === Number(e.target.value),
+                  )
+                  setCheckout((prev) =>
+                    prev
+                      ? { ...prev, segundo: seg || null }
+                      : {
+                          hora: HORARIOS[0],
+                          entrada: null,
+                          segundo: seg || null,
+                        },
+                  )
+                }}
+                className="rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Selecciona un segundo...</option>
+                {segundosDisponibles.map((segundo) => (
+                  <option key={segundo.id} value={segundo.id}>
+                    {segundo.nombre} ({segundo.stock} disp.)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Selector de Horario */}
+            <div className="flex flex-col">
+              <label className="mb-2 text-sm font-semibold text-foreground">
+                Horario de recojo
+              </label>
+              <select
+                value={checkout?.hora ?? HORARIOS[0]}
+                onChange={(e) =>
+                  setCheckout((prev) =>
+                    prev ? { ...prev, hora: e.target.value } : prev,
+                  )
+                }
+                className="rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
+              >
+                {HORARIOS.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Resumen y botón */}
+          <div className="border-t border-border px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                {checkout?.entrada && checkout?.segundo ? (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground">
+                      {checkout.entrada}
+                    </span>{" "}
+                    +{" "}
+                    <span className="font-semibold text-foreground">
+                      {checkout.segundo.nombre}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Completa los campos para continuar
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-extrabold text-foreground">
+                  {formatPrecio(menu.precioTotal)}
+                </p>
+                <p className="text-xs text-muted-foreground">Menú completo</p>
+              </div>
+            </div>
+
+            <Button
+              onClick={() =>
+                checkout?.entrada &&
+                checkout?.segundo &&
+                setCheckout(checkout)
+              }
+              disabled={!checkout?.entrada || !checkout?.segundo}
+              size="lg"
+              className="mt-4 w-full rounded-xl font-semibold transition-transform hover:scale-[1.02]"
+            >
+              Continuar al Pago
+            </Button>
+          </div>
         </div>
 
         {misPedidos.length > 0 && (
@@ -99,7 +242,7 @@ export function StudentDashboard({
                 >
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-card-foreground">
-                      {p.plato}
+                      {p.entrada} + {p.segundo}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {p.hora} · #{p.codigo}
@@ -113,10 +256,12 @@ export function StudentDashboard({
         )}
       </main>
 
-      {checkout && (
+      {checkout?.entrada && checkout?.segundo && (
         <CheckoutModal
-          plato={checkout.plato}
+          entrada={checkout.entrada}
+          segundo={checkout.segundo}
           hora={checkout.hora}
+          precioTotal={menu.precioTotal}
           onClose={() => setCheckout(null)}
           onConfirm={confirmar}
         />
@@ -150,135 +295,49 @@ function DashboardHeader({ onLogout }: { onLogout: () => void }) {
   )
 }
 
-function PlatoCard({
-  plato,
-  onReservar,
-}: {
-  plato: Plato
-  onReservar: (hora: string) => void
-}) {
-  const [hora, setHora] = useState(HORARIOS[0])
-  const info = stockInfo(plato.stock)
-
-  return (
-    <article className="flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-shadow hover:shadow-xl hover:shadow-black/5">
-      <div className="relative h-44 overflow-hidden">
-        <img
-          src={plato.imagen || "/placeholder.svg"}
-          alt={plato.nombre}
-          className="size-full object-cover transition-transform duration-300 hover:scale-105"
-          crossOrigin="anonymous"
-        />
-        <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur">
-          {plato.etiqueta}
-        </span>
-        <StockBadge tone={info.tone} label={info.label} stock={plato.stock} />
-      </div>
-
-      <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Store className="size-3.5" />
-          {plato.restaurante}
-        </div>
-        <h3 className="mt-1 text-lg font-bold text-card-foreground">
-          {plato.nombre}
-        </h3>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-          {plato.descripcion}
-        </p>
-
-        <div className="mt-4 space-y-3">
-          <label className="block">
-            <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Clock className="size-3.5" /> Horario de recojo
-            </span>
-            <select
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-              disabled={info.disabled}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring disabled:opacity-50"
-            >
-              {HORARIOS.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="flex items-center gap-2 rounded-xl bg-accent/30 px-3 py-2 text-xs font-semibold text-accent-foreground">
-            <Package className="size-4" />
-            Modalidad: Recojo Rápido (Para Llevar)
-          </div>
-        </div>
-
-        <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-          <span className="text-xl font-extrabold text-foreground">
-            {formatPrecio(plato.precio)}
-          </span>
-          <Button
-            onClick={() => onReservar(hora)}
-            disabled={info.disabled}
-            className="rounded-xl font-semibold transition-transform hover:scale-[1.02]"
-          >
-            {info.disabled ? "Agotado" : "Reservar y Pagar"}
-          </Button>
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function StockBadge({
-  tone,
-  label,
-  stock,
-}: {
-  tone: "success" | "warning" | "danger"
-  label: string
-  stock: number
-}) {
-  const styles = {
-    success: "bg-success text-success-foreground",
-    warning: "bg-warning text-warning-foreground",
-    danger: "bg-destructive text-white",
-  }[tone]
-  return (
-    <span
-      className={`absolute right-3 top-3 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${styles}`}
-    >
-      <span className="size-1.5 rounded-full bg-current" />
-      {label}
-      {tone !== "danger" && (
-        <span className="opacity-80">· {stock} und.</span>
-      )}
-    </span>
-  )
-}
-
 function EstadoBadge({ estado }: { estado: Pedido["estado"] }) {
-  const map = {
-    recibido: { label: "Recibido", cls: "bg-secondary text-secondary-foreground" },
-    preparacion: { label: "En preparación", cls: "bg-warning text-warning-foreground" },
-    listo: { label: "Listo", cls: "bg-success text-success-foreground" },
-  }[estado]
+  const config: Record<
+    Pedido["estado"],
+    { bg: string; text: string; label: string }
+  > = {
+    recibido: {
+      bg: "bg-blue-100",
+      text: "text-blue-700",
+      label: "En cocina",
+    },
+    preparacion: {
+      bg: "bg-yellow-100",
+      text: "text-yellow-700",
+      label: "Preparando",
+    },
+    listo: {
+      bg: "bg-green-100",
+      text: "text-green-700",
+      label: "¡Listo!",
+    },
+  }
+
+  const { bg, text, label } = config[estado]
+
   return (
-    <span
-      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${map.cls}`}
-    >
-      {map.label}
+    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${bg} ${text}`}>
+      {label}
     </span>
   )
 }
 
 function CheckoutModal({
-  plato,
+  entrada,
+  segundo,
   hora,
+  precioTotal,
   onClose,
   onConfirm,
 }: {
-  plato: Plato
+  entrada: string
+  segundo: { id: number; nombre: string; stock: number }
   hora: string
+  precioTotal: number
   onClose: () => void
   onConfirm: (metodo: MetodoPago) => void
 }) {
@@ -297,7 +356,7 @@ function CheckoutModal({
     notify({
       tone: "info",
       title: "Procesando pago...",
-      message: `${mensajes[metodo]} para ${plato.nombre}.`,
+      message: `${mensajes[metodo]} para ${entrada} + ${segundo.nombre}.`,
     })
     setTimeout(() => onConfirm(metodo), 1300)
   }
@@ -320,24 +379,21 @@ function CheckoutModal({
         </div>
 
         <div className="p-5">
-          <div className="flex items-center gap-3 rounded-2xl bg-secondary p-3">
-            <img
-              src={plato.imagen || "/placeholder.svg"}
-              alt={plato.nombre}
-              className="size-14 rounded-xl object-cover"
-              crossOrigin="anonymous"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-card-foreground">
-                {plato.nombre}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {plato.restaurante} · {hora}
+          <div className="flex flex-col gap-3 rounded-2xl bg-secondary p-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Entrada</p>
+              <p className="font-semibold text-card-foreground">{entrada}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Segundo</p>
+              <p className="font-semibold text-card-foreground">
+                {segundo.nombre}
               </p>
             </div>
-            <span className="font-bold text-foreground">
-              {formatPrecio(plato.precio)}
-            </span>
+            <div>
+              <p className="text-xs text-muted-foreground">Horario de recojo</p>
+              <p className="font-semibold text-card-foreground">{hora}</p>
+            </div>
           </div>
 
           <div className="mt-5">
@@ -372,14 +428,6 @@ function CheckoutModal({
             {metodo === "express" && <PanelExpress />}
           </div>
 
-          <div className="mt-4 flex items-center justify-between rounded-2xl border border-dashed border-border p-3 text-sm">
-            <span className="text-muted-foreground">Modalidad</span>
-            <span className="flex items-center gap-1.5 font-semibold text-card-foreground">
-              <Package className="size-4 text-primary" />
-              Recojo Rápido (Para Llevar)
-            </span>
-          </div>
-
           <Button
             onClick={pagar}
             disabled={procesando}
@@ -387,9 +435,7 @@ function CheckoutModal({
             className="mt-5 w-full rounded-xl font-semibold transition-transform hover:scale-[1.02]"
           >
             <Lock className="size-5" />
-            {procesando
-              ? "Procesando..."
-              : `Pagar ${formatPrecio(plato.precio)}`}
+            {procesando ? "Procesando..." : `Pagar ${formatPrecio(precioTotal)}`}
           </Button>
           <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
             <Lock className="size-3" />

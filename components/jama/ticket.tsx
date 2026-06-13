@@ -86,11 +86,27 @@ export function Ticket({
           </div>
 
           <div className="mt-5 space-y-2.5 rounded-2xl bg-secondary p-4 text-sm">
-            <Row
-              icon={<Utensils className="size-4" />}
-              label="Plato"
-              value={pedido.plato}
-            />
+            {pedido.entrada && (
+              <Row
+                icon={<Utensils className="size-4" />}
+                label="Entrada"
+                value={pedido.entrada}
+              />
+            )}
+            {pedido.segundo && (
+              <Row
+                icon={<Utensils className="size-4" />}
+                label="Segundo"
+                value={pedido.segundo}
+              />
+            )}
+            {pedido.plato && (
+              <Row
+                icon={<Utensils className="size-4" />}
+                label="Plato"
+                value={pedido.plato}
+              />
+            )}
             <Row
               icon={<Store className="size-4" />}
               label="Restaurante"
