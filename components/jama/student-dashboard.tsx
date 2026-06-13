@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react"
 import {
   Apple,
-  Clock,
   CreditCard,
   Lock,
   LogOut,
@@ -20,8 +19,11 @@ import { Ticket } from "@/components/jama/ticket"
 import { useToast } from "@/components/jama/toast"
 import {
   formatPrecio,
+<<<<<<< HEAD
   getEntradosForRestaurant,
   getMenuForRestaurant,
+=======
+>>>>>>> main
   stockInfo,
   type MetodoPago,
   type Pedido,
@@ -45,12 +47,16 @@ export function StudentDashboard({
   onReservar,
   onLogout,
 }: Props) {
+<<<<<<< HEAD
   const [filtro, setFiltro] = useState<"Todos" | string>("Todos")
   const [selectedPlato, setSelectedPlato] = useState<Plato | null>(null)
   const [selectedEntrada, setSelectedEntrada] = useState<string>("")
   const [selectedSegundo, setSelectedSegundo] = useState<Segundo | null>(null)
   const [metodoPago, setMetodoPago] = useState<MetodoPago>("tarjeta")
   const [procesando, setProcesando] = useState(false)
+=======
+  const [checkout, setCheckout] = useState<Plato | null>(null)
+>>>>>>> main
   const [ticket, setTicket] = useState<Pedido | null>(null)
   const { notify } = useToast()
 
@@ -59,6 +65,7 @@ export function StudentDashboard({
     [pedidos],
   )
 
+<<<<<<< HEAD
   const platosEnFilas = useMemo(() => {
     const f = filtro === "Todos" ? platos : platos.filter((p) => p.restaurante === filtro)
     return f.sort((a, b) => a.id - b.id)
@@ -110,6 +117,13 @@ export function StudentDashboard({
         </div>
       </main>
     )
+=======
+  function confirmar(metodo: MetodoPago) {
+    if (!checkout) return
+    const pedido = onReservar(checkout, "Inmediato", metodo)
+    setCheckout(null)
+    setTicket(pedido)
+>>>>>>> main
   }
 
   return (
@@ -161,11 +175,15 @@ export function StudentDashboard({
             <PlatoCard
               key={plato.id}
               plato={plato}
+<<<<<<< HEAD
               onSelect={() => {
                 setSelectedPlato(plato)
                 setSelectedEntrada("")
                 setSelectedSegundo(null)
               }}
+=======
+              onReservar={() => setCheckout(plato)}
+>>>>>>> main
             />
           ))}
         </div>
@@ -189,12 +207,58 @@ export function StudentDashboard({
             }}
           />
         )}
+<<<<<<< HEAD
+=======
+      </main>
+
+      {checkout && (
+        <CheckoutModal
+          plato={checkout}
+          onClose={() => setCheckout(null)}
+          onConfirm={confirmar}
+        />
+      )}
+
+      {ticket && <Ticket pedido={ticket} onClose={() => setTicket(null)} />}
+    </div>
+  )
+}
+
+function DashboardHeader({ onLogout }: { onLogout: () => void }) {
+  return (
+    <header className="sticky top-12 z-40 border-b border-border bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3">
+          <JamaLogo />
+          <span className="hidden rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary sm:inline">
+            Panel del Estudiante
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          onClick={onLogout}
+          className="rounded-full font-medium transition-transform hover:scale-[1.02]"
+        >
+          <LogOut className="size-4" />
+          Cerrar Sesión
+        </Button>
+>>>>>>> main
       </div>
     </main>
   )
 }
 
+<<<<<<< HEAD
 function PlatoCard({ plato, onSelect }: { plato: Plato; onSelect: () => void }) {
+=======
+function PlatoCard({
+  plato,
+  onReservar,
+}: {
+  plato: Plato
+  onReservar: () => void
+}) {
+>>>>>>> main
   const info = stockInfo(plato.stock)
 
   return (
@@ -222,6 +286,7 @@ function PlatoCard({ plato, onSelect }: { plato: Plato; onSelect: () => void }) 
         <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
           {plato.descripcion}
         </p>
+<<<<<<< HEAD
         <div className="mt-auto flex items-center justify-between pt-3">
           <span className="font-bold text-foreground">{formatPrecio(plato.precio)}</span>
           <span
@@ -232,6 +297,22 @@ function PlatoCard({ plato, onSelect }: { plato: Plato; onSelect: () => void }) 
                   ? "bg-warning/10 text-warning"
                   : "bg-destructive/10 text-destructive"
             }`}
+=======
+
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-accent/30 px-3 py-2 text-xs font-semibold text-accent-foreground">
+          <Package className="size-4" />
+          Modalidad: Recojo Rápido (Para Llevar)
+        </div>
+
+        <div className="mt-auto flex items-center justify-between gap-3 pt-5">
+          <span className="text-xl font-extrabold text-foreground">
+            {formatPrecio(plato.precio)}
+          </span>
+          <Button
+            onClick={() => onReservar()}
+            disabled={info.disabled}
+            className="rounded-xl font-semibold transition-transform hover:scale-[1.02]"
+>>>>>>> main
           >
             {info.label}
           </span>
@@ -243,6 +324,7 @@ function PlatoCard({ plato, onSelect }: { plato: Plato; onSelect: () => void }) 
 
 function ReservaModal({
   plato,
+<<<<<<< HEAD
   restaurantMenus,
   selectedEntrada,
   selectedSegundo,
@@ -252,9 +334,12 @@ function ReservaModal({
   onSegundoChange,
   onMetodoPagoChange,
   onConfirmar,
+=======
+>>>>>>> main
   onClose,
 }: {
   plato: Plato
+<<<<<<< HEAD
   restaurantMenus: Record<string, RestaurantMenu>
   selectedEntrada: string
   selectedSegundo: Segundo | null
@@ -264,6 +349,8 @@ function ReservaModal({
   onSegundoChange: (segundo: Segundo | null) => void
   onMetodoPagoChange: (metodo: MetodoPago) => void
   onConfirmar: () => void
+=======
+>>>>>>> main
   onClose: () => void
 }) {
   const menu = getMenuForRestaurant(plato.restaurante)
@@ -298,8 +385,17 @@ function ReservaModal({
               crossOrigin="anonymous"
             />
             <div className="min-w-0 flex-1">
+<<<<<<< HEAD
               <p className="truncate font-semibold text-card-foreground">{plato.nombre}</p>
               <p className="text-xs text-muted-foreground">{plato.restaurante}</p>
+=======
+              <p className="truncate font-semibold text-card-foreground">
+                {plato.nombre}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {plato.restaurante}
+              </p>
+>>>>>>> main
             </div>
             <span className="font-bold text-foreground">{formatPrecio(plato.precio)}</span>
           </div>
