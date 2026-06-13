@@ -8,6 +8,7 @@ import {
   Clock,
   Package,
   Pencil,
+  Plus,
   ScanLine,
   Store,
   TrendingUp,
@@ -36,6 +37,7 @@ interface Props {
     id: number,
     cambios: { nombre: string; precio: number; stock: number },
   ) => void
+  onAgregarPlato: (plato: Omit<Plato, "id">) => void
   onLogout: () => void
 }
 
@@ -46,6 +48,7 @@ export function RestaurantDashboard({
   onAvanzar,
   onValidar,
   onEditarPlato,
+  onAgregarPlato,
   onLogout,
 }: Props) {
   const [tab, setTab] = useState<"cola" | "menus">("cola")
@@ -143,7 +146,7 @@ export function RestaurantDashboard({
             <Validador onValidar={onValidar} />
           </div>
         ) : (
-          <MenuManager platos={platos} onEditarPlato={onEditarPlato} />
+          <MenuManager platos={platos} onEditarPlato={onEditarPlato} onAgregarPlato={onAgregarPlato} />
         )}
       </main>
     </div>
@@ -264,25 +267,49 @@ function TicketCard({
 function MenuManager({
   platos,
   onEditarPlato,
+  onAgregarPlato,
 }: {
   platos: Plato[]
   onEditarPlato: (
     id: number,
     cambios: { nombre: string; precio: number; stock: number },
   ) => void
+  onAgregarPlato: (plato: Omit<Plato, "id">) => void
 }) {
   const [editando, setEditando] = useState<number | null>(null)
+  const [agregando, setAgregando] = useState(false)
 
   return (
     <section className="mt-6">
-      <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-        <Utensils className="size-5 text-primary" />
-        Menús del Día cargados
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Edita el nombre, precio y stock. Los cambios se reflejan al instante en la
-        vista del estudiante.
-      </p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <Utensils className="size-5 text-primary" />
+            Menús del Día cargados
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Edita el nombre, precio y stock. Los cambios se reflejan al instante en la
+            vista del estudiante.
+          </p>
+        </div>
+        <Button
+          onClick={() => setAgregando(true)}
+          className="rounded-xl font-semibold transition-transform hover:scale-[1.02]"
+        >
+          <Plus className="size-4" />
+          Agregar Plato
+        </Button>
+      </div>
+
+      {agregando && (
+        <AddPlatoForm
+          onCancel={() => setAgregando(false)}
+          onSave={(nuevo) => {
+            onAgregarPlato(nuevo)
+            setAgregando(false)
+          }}
+        />
+      )}
 
       <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card">
         {/* Encabezado tabla (desktop) */}
@@ -449,6 +476,168 @@ function EditForm({
         </Button>
       </div>
     </form>
+  )
+}
+
+function AddPlatoForm({
+  onCancel,
+  onSave,
+}: {
+  onCancel: () => void
+  onSave: (plato: Omit<Plato, "id">) => void
+}) {
+  const [nombre, setNombre] = useState("")
+  const [descripcion, setDescripcion] = useState("")
+  const [precio, setPrecio] = useState("")
+  const [stock, setStock] = useState("")
+  const [restaurante, setRestaurante] = useState("")
+  const [etiqueta, setEtiqueta] = useState("")
+  const [imagen, setImagen] = useState("")
+
+  function guardar(e: React.FormEvent) {
+    e.preventDefault()
+    const precioNum = Number.parseFloat(precio)
+    const stockNum = Number.parseInt(stock, 10)
+    if (
+      !nombre.trim() ||
+      !restaurante.trim() ||
+      Number.isNaN(precioNum) ||
+      Number.isNaN(stockNum)
+    )
+      return
+    onSave({
+      nombre: nombre.trim(),
+      descripcion: descripcion.trim(),
+      precio: Math.max(0, precioNum),
+      stock: Math.max(0, stockNum),
+      restaurante: restaurante.trim(),
+      etiqueta: etiqueta.trim() || "Nuevo",
+      imagen: imagen.trim() || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop",
+    })
+  }
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-3xl border border-primary/40 bg-primary/5 animate-in fade-in slide-in-from-top-2">
+      <div className="flex items-center justify-between border-b border-border bg-card px-5 py-4">
+        <h3 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
+          <Plus className="size-5 text-primary" />
+          Agregar nuevo plato
+        </h3>
+        <button
+          onClick={onCancel}
+          aria-label="Cerrar"
+          className="text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <X className="size-5" />
+        </button>
+      </div>
+      <form onSubmit={guardar} className="grid gap-4 p-5 md:grid-cols-2">
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-card-foreground">
+            Nombre del plato *
+          </span>
+          <input
+            required
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            placeholder="Ej: Ceviche Clásico"
+            className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-card-foreground">
+            Restaurante *
+          </span>
+          <input
+            required
+            value={restaurante}
+            onChange={(e) => setRestaurante(e.target.value)}
+            placeholder="Ej: Café Univalle"
+            className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="block md:col-span-2">
+          <span className="mb-1.5 block text-sm font-medium text-card-foreground">
+            Descripción
+          </span>
+          <input
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            placeholder="Descripción breve del plato"
+            className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-card-foreground">
+            Precio (S/) *
+          </span>
+          <input
+            required
+            type="number"
+            step="0.5"
+            min="0"
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
+            placeholder="12.00"
+            className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-card-foreground">
+            Stock inicial *
+          </span>
+          <input
+            required
+            type="number"
+            min="0"
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+            placeholder="10"
+            className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-card-foreground">
+            Etiqueta
+          </span>
+          <input
+            value={etiqueta}
+            onChange={(e) => setEtiqueta(e.target.value)}
+            placeholder="Ej: Más pedido, Saludable, Clásico"
+            className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-card-foreground">
+            URL de imagen
+          </span>
+          <input
+            type="url"
+            value={imagen}
+            onChange={(e) => setImagen(e.target.value)}
+            placeholder="https://..."
+            className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <div className="flex gap-3 md:col-span-2">
+          <Button
+            type="submit"
+            className="flex-1 rounded-xl font-semibold transition-transform hover:scale-[1.02]"
+          >
+            <Plus className="size-4" />
+            Agregar Plato
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="rounded-xl font-semibold"
+          >
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }
 

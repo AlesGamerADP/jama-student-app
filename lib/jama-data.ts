@@ -172,3 +172,29 @@ export const stockInfo = (stock: number) => {
     return { label: "¡Pocas unidades!", tone: "warning" as const, disabled: false }
   return { label: "Disponible", tone: "success" as const, disabled: false }
 }
+
+const STORAGE_KEY = "jama_platos"
+
+export function cargarPlatos(): Plato[] {
+  if (typeof window === "undefined") return PLATOS_SEMILLA
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) return JSON.parse(stored) as Plato[]
+  } catch {
+    // ignore parse errors
+  }
+  return PLATOS_SEMILLA
+}
+
+export function guardarPlatos(platos: Plato[]): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(platos))
+  } catch {
+    // ignore storage errors
+  }
+}
+
+export function generarIdPlato(): number {
+  return Date.now()
+}

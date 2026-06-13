@@ -1,13 +1,16 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Landing } from "@/components/jama/landing"
 import { StudentDashboard } from "@/components/jama/student-dashboard"
 import { RestaurantDashboard } from "@/components/jama/restaurant-dashboard"
 import { ViewSwitcher } from "@/components/jama/view-switcher"
 import { ToastProvider, useToast } from "@/components/jama/toast"
 import {
+  cargarPlatos,
   generarCodigo,
+  generarIdPlato,
+  guardarPlatos,
   PLATOS_SEMILLA,
   type EstadoPedido,
   type MetodoPago,
@@ -24,6 +27,14 @@ function Shell() {
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [ingresos, setIngresos] = useState(0)
   const { notify } = useToast()
+
+  useEffect(() => {
+    setPlatos(cargarPlatos())
+  }, [])
+
+  useEffect(() => {
+    guardarPlatos(platos)
+  }, [platos])
 
   const reservar = useCallback(
     (plato: Plato, hora: string, metodoPago: MetodoPago): Pedido => {
@@ -69,6 +80,19 @@ function Shell() {
         tone: "success",
         title: "Menú actualizado",
         message: `Los cambios en "${cambios.nombre}" ya son visibles para los estudiantes.`,
+      })
+    },
+    [notify],
+  )
+
+  const agregarPlato = useCallback(
+    (nuevo: Omit<Plato, "id">) => {
+      const plato: Plato = { ...nuevo, id: generarIdPlato() }
+      setPlatos((prev) => [...prev, plato])
+      notify({
+        tone: "success",
+        title: "Plato agregado",
+        message: `"${nuevo.nombre}" ya está disponible para los estudiantes.`,
       })
     },
     [notify],
@@ -123,6 +147,7 @@ function Shell() {
             onAvanzar={avanzar}
             onValidar={validar}
             onEditarPlato={editarPlato}
+            onAgregarPlato={agregarPlato}
             onLogout={() => setView("landing")}
           />
         )}
