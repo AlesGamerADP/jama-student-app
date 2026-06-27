@@ -9,18 +9,12 @@ import { ToastProvider, useToast } from "@/components/jama/toast"
 import {
   cargarPlatos,
   generarCodigo,
-<<<<<<< HEAD
   getMenuForRestaurant,
-=======
-  generarIdPlato,
-  guardarPlatos,
->>>>>>> main
   PLATOS_SEMILLA,
   RESTAURANTES_SEMILLA,
   type EstadoPedido,
   type MetodoPago,
   type Pedido,
-  type Plato,
   type RestaurantMenu,
   type Segundo,
 } from "@/lib/jama-data"
@@ -41,10 +35,6 @@ function Shell() {
   useEffect(() => {
     setPlatos(cargarPlatos())
   }, [])
-
-  useEffect(() => {
-    guardarPlatos(platos)
-  }, [platos])
 
   const reservar = useCallback(
     (
@@ -97,11 +87,7 @@ function Shell() {
       notify({
         tone: "success",
         title: "¡Reserva confirmada!",
-<<<<<<< HEAD
         message: `${entrada} + ${segundo.nombre} en ${plato.restaurante}. Código #${pedido.codigo}.`,
-=======
-        message: `${plato.nombre} — listo para recoger. Código #${pedido.codigo}.`,
->>>>>>> main
       })
 
       return pedido
@@ -134,19 +120,6 @@ function Shell() {
         tone: "success",
         title: "Segundos actualizados",
         message: "Los cambios ya son visibles en el catálogo del estudiante.",
-      })
-    },
-    [notify],
-  )
-
-  const agregarPlato = useCallback(
-    (nuevo: Omit<Plato, "id">) => {
-      const plato: Plato = { ...nuevo, id: generarIdPlato() }
-      setPlatos((prev) => [...prev, plato])
-      notify({
-        tone: "success",
-        title: "Plato agregado",
-        message: `"${nuevo.nombre}" ya está disponible para los estudiantes.`,
       })
     },
     [notify],
@@ -204,13 +177,8 @@ function Shell() {
               .reduce((sum, p) => sum + p.precio, 0)}
             onAvanzar={avanzar}
             onValidar={validar}
-<<<<<<< HEAD
             onEditarEntradas={(entradas) => editarEntradas("Café Univalle", entradas)}
             onEditarSegundos={(segundos) => editarSegundos("Café Univalle", segundos)}
-=======
-            onEditarPlato={editarPlato}
-            onAgregarPlato={agregarPlato}
->>>>>>> main
             onLogout={() => setView("landing")}
           />
         )}
