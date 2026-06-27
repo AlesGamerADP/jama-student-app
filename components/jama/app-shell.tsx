@@ -145,23 +145,24 @@ function Shell() {
   )
 
   const validar = useCallback((codigo: string): boolean => {
-    let pedidoEncontrado: Pedido | null = null
+    const codigoUpper = codigo.toUpperCase().replace(/^#/, "")
+    let encontrado = false
+
     setPedidos((prev) => {
-      const pedido = prev.find((p) => p.codigo === codigo)
+      const pedido = prev.find((p) => p.codigo === codigoUpper)
       if (pedido) {
-        pedidoEncontrado = pedido
-        return prev.filter((p) => p.codigo !== codigo)
+        encontrado = true
+        notify({
+          tone: "success",
+          title: "Pedido entregado",
+          message: `Pedido #${codigoUpper} de ${pedido.restaurante} entregado correctamente.`,
+        })
+        return prev.filter((p) => p.codigo !== codigoUpper)
       }
       return prev
     })
-    if (pedidoEncontrado) {
-      notify({
-        tone: "success",
-        title: "Pedido entregado",
-        message: `Pedido #${codigo} de ${pedidoEncontrado.restaurante} entregado correctamente.`,
-      })
-    }
-    return !!pedidoEncontrado
+
+    return encontrado
   }, [notify])
 
   return (

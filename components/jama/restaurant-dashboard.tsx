@@ -267,25 +267,17 @@ function EmptyState() {
 function Validador({ onValidar }: { onValidar: (codigo: string) => boolean }) {
   const [codigo, setCodigo] = useState("")
   const [resultado, setResultado] = useState<"ok" | "error" | null>(null)
-  const { notify } = useToast()
 
   function validar() {
-    const ok = onValidar(codigo.toUpperCase())
+    if (!codigo.trim()) return
+
+    const ok = onValidar(codigo)
     setResultado(ok ? "ok" : "error")
-    setCodigo("")
+
     if (ok) {
-      notify({
-        tone: "success",
-        title: "Pedido entregado",
-        message: "El estudiante ha recogido su orden exitosamente.",
-      })
-    } else {
-      notify({
-        tone: "info",
-        title: "Código inválido",
-        message: "El código no coincide con ningún pedido activo.",
-      })
+      setCodigo("")
     }
+
     setTimeout(() => setResultado(null), 2000)
   }
 
@@ -308,7 +300,7 @@ function Validador({ onValidar }: { onValidar: (codigo: string) => boolean }) {
 
         <Button
           onClick={validar}
-          disabled={!codigo || resultado !== null}
+          disabled={!codigo.trim()}
           size="sm"
           className="w-full rounded-xl"
         >
@@ -345,6 +337,7 @@ function MenuManager({
   const [nuevaEntrada, setNuevaEntrada] = useState("")
   const [segundos, setSegundos] = useState(menu.segundos)
   const [editandoSegundo, setEditandoSegundo] = useState<number | null>(null)
+  const [nuevoSegundo, setNuevoSegundo] = useState<Segundo>({ id: Date.now(), nombre: "", stock: 0 })
   const { notify } = useToast()
 
   useEffect(() => {
@@ -364,6 +357,14 @@ function MenuManager({
     const nuevas = entradas.filter((_: string, i: number) => i !== index)
     setEntradas(nuevas)
     onEditarEntradas(nuevas)
+  }
+
+  function agregarSegundo() {
+    if (!nuevoSegundo.nombre.trim()) return
+    const nuevos = [...segundos, nuevoSegundo]
+    setSegundos(nuevos)
+    setNuevoSegundo({ id: Date.now(), nombre: "", stock: 0 })
+    onEditarSegundos(nuevos)
   }
 
   function actualizarSegundo(id: number, nombre: string, stock: number) {
@@ -499,6 +500,32 @@ function MenuManager({
               )}
             </div>
           ))}
+        </div>
+
+        {/* Agregar nuevo segundo */}
+        <div className="mt-4 flex gap-2">
+          <input
+            type="text"
+            placeholder="Nombre del plato"
+            value={nuevoSegundo.nombre}
+            onChange={(e) => setNuevoSegundo({ ...nuevoSegundo, nombre: e.target.value })}
+            className="flex-1 rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
+          />
+          <input
+            type="number"
+            placeholder="Stock"
+            value={nuevoSegundo.stock || ""}
+            onChange={(e) => setNuevoSegundo({ ...nuevoSegundo, stock: parseInt(e.target.value) || 0 })}
+            className="w-20 rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
+          />
+          <Button
+            onClick={agregarSegundo}
+            disabled={!nuevoSegundo.nombre.trim()}
+            size="sm"
+            className="rounded-xl"
+          >
+            <Plus className="size-4" />
+          </Button>
         </div>
       </div>
     </div>
