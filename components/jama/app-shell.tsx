@@ -119,14 +119,23 @@ function Shell() {
   )
 
   const validar = useCallback((codigo: string): boolean => {
-    let encontrado = false
-    setPedidos((prev) => {
-      const existe = prev.some((p) => p.codigo === codigo)
-      encontrado = existe
-      return existe ? prev.filter((p) => p.codigo !== codigo) : prev
-    })
-    return encontrado
-  }, [])
+    const existe = pedidos.some((p) => p.codigo === codigo)
+    if (existe) {
+      setPedidos((prev) => prev.filter((p) => p.codigo !== codigo))
+      notify({
+        tone: "success",
+        title: "✓ Entrega validada",
+        message: `Código ${codigo} entregado correctamente.`,
+      })
+    } else {
+      notify({
+        tone: "error",
+        title: "Código no encontrado",
+        message: `No existe pedido con código ${codigo}.`,
+      })
+    }
+    return existe
+  }, [pedidos, notify])
 
   return (
     <>

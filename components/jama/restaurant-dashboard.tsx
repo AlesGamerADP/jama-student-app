@@ -86,7 +86,8 @@ export function RestaurantDashboard({
 
   function validarTicket() {
     if (!validarCodigo.trim()) return
-    if (onValidar(validarCodigo)) {
+    const found = pedidosCafe.some((p) => p.codigo === validarCodigo)
+    if (found) {
       onValidar(validarCodigo)
       setValidarCodigo("")
     }
