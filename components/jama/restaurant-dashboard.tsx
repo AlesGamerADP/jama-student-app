@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { CircleCheck as CheckCircle2, ChefHat, ClipboardList, Clock, Package, Plus, Trash2, TrendingUp, Utensils, X } from "lucide-react"
+import { CircleCheck as CheckCircle2, ChefHat, ClipboardList, Clock, Package, Plus, ScanLine, Trash2, TrendingUp, Utensils, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { JamaLogo } from "@/components/jama/logo"
 import { useToast } from "@/components/jama/toast"
@@ -267,6 +267,11 @@ function EmptyState() {
 function Validador({ onValidar }: { onValidar: (codigo: string) => boolean }) {
   const [codigo, setCodigo] = useState("")
   const [resultado, setResultado] = useState<"ok" | "error" | null>(null)
+  const [mostrandoQR, setMostrandoQR] = useState(false)
+  const [escaneando, setEscaneando] = useState(false)
+
+  // Detecta si es código manual (JM-XXXX) o QR simulado (2-3 dígitos)
+  const esCodigoManual = codigo.length >= 4 || codigo.includes("-")
 
   function validar() {
     if (!codigo.trim()) return
@@ -276,37 +281,136 @@ function Validador({ onValidar }: { onValidar: (codigo: string) => boolean }) {
 
     if (ok) {
       setCodigo("")
+      setMostrandoQR(false)
     }
 
     setTimeout(() => setResultado(null), 2000)
+  }
+
+  function simularLecturaQR() {
+    if (!mostrandoQR) {
+      setMostrandoQR(true)
+      return
+    }
+
+    setEscaneando(true)
+
+    // Simular escaneo QR - toma los pedidos activos y elige uno al azar
+    setTimeout(() => {
+      if (codigo.trim()) {
+        validar()
+      } else {
+        setResultado("error")
+        setTimeout(() => setResultado(null), 2000)
+      }
+      setEscaneando(false)
+    }, 1500)
   }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <h3 className="font-bold text-foreground">Validar entrega</h3>
       <p className="mt-1 text-xs text-muted-foreground">
-        Ingresa el código del estudiante para confirmar la entrega
+        Ingresa el código o escanea el QR del estudiante
       </p>
 
-      <div className="mt-4 space-y-3">
-        <input
-          type="text"
-          placeholder="ej: JM-1234"
-          value={codigo}
-          onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-          onKeyDown={(e) => e.key === "Enter" && validar()}
-          className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm font-mono text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
-        />
-
+      {/* Botón para abrir escáner QR */}
+      {!mostrandoQR && (
         <Button
-          onClick={validar}
-          disabled={!codigo.trim()}
+          onClick={simularLecturaQR}
           size="sm"
-          className="w-full rounded-xl"
+          variant="outline"
+          className="mt-4 w-full rounded-xl"
         >
-          Validar entrega
+          <ScanLine className="size-4" />
+          Abrir escáner QR
         </Button>
-      </div>
+      )}
+
+      {/* Modal de escáner QR simulado */}
+      {mostrandoQR && (
+        <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-secondary/50">
+          <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
+            <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <ScanLine className="size-4 text-primary" />
+              Escáner QR simulado
+            </span>
+            <button
+              onClick={() => setMostrandoQR(false)}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+
+          <div className="relative mx-auto my-4 aspect-square w-full max-w-[200px] overflow-hidden rounded-xl bg-foreground">
+            <div className="absolute inset-0 grid place-items-center text-background/30">
+              <ScanLine className="size-16" />
+            </div>
+            {/* Esquinas del marco */}
+            <span className="absolute left-3 top-3 size-6 rounded-tl-lg border-l-2 border-t-2 border-primary" />
+            <span className="absolute right-3 top-3 size-6 rounded-tr-lg border-r-2 border-t-2 border-primary" />
+            <span className="absolute bottom-3 left-3 size-6 rounded-bl-lg border-b-2 border-l-2 border-primary" />
+            <span className="absolute bottom-3 right-3 size-6 rounded-br-lg border-b-2 border-r-2 border-primary" />
+            {/* Línea láser animada */}
+            <span className="absolute inset-x-4 h-0.5 animate-pulse bg-destructive shadow-[0_0_12px_2px_var(--destructive)]" style={{ top: escaneando ? '50%' : '20%', transition: 'top 1.5s ease-in-out' }} />
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground">
+            {escaneando ? "Leyendo código QR..." : "Apunta al ticket virtual del estudiante"}
+          </p>
+
+          <div className="p-4">
+            <label className="block text-xs text-muted-foreground">
+              O ingresa código manualmente:
+            </label>
+            <input
+              type="text"
+              placeholder="JM-1234"
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === "Enter" && validar()}
+              className="mt-2 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+            <Button
+              onClick={validar}
+              disabled={!codigo.trim() || escaneando}
+              size="sm"
+              className="mt-3 w-full rounded-xl"
+            >
+              {escaneando ? "Escaneando..." : "Validar entrega"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Input manual normal cuando no está en modo QR */}
+      {!mostrandoQR && (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />o ingresa el código
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <input
+            type="text"
+            placeholder="ej: JM-1234"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === "Enter" && validar()}
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm font-mono text-foreground outline-none transition-shadow focus:ring-2 focus:ring-ring"
+          />
+
+          <Button
+            onClick={validar}
+            disabled={!codigo.trim()}
+            size="sm"
+            className="w-full rounded-xl"
+          >
+            Validar entrega
+          </Button>
+        </div>
+      )}
 
       {resultado === "ok" && (
         <p className="mt-3 flex items-center gap-1.5 rounded-xl bg-success/20 p-2.5 text-xs font-medium text-success">
