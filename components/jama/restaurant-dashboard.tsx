@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { CircleCheck as CheckCircle2, ChefHat, ClipboardList, Clock, Package, Plus, Trash2, TrendingUp, Utensils, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { JamaLogo } from "@/components/jama/logo"
@@ -346,6 +346,11 @@ function MenuManager({
   const [segundos, setSegundos] = useState(menu.segundos)
   const [editandoSegundo, setEditandoSegundo] = useState<number | null>(null)
   const { notify } = useToast()
+
+  useEffect(() => {
+    setEntradas(menu.entradas)
+    setSegundos(menu.segundos)
+  }, [menu.entradas, menu.segundos])
 
   function agregarEntrada() {
     if (!nuevaEntrada.trim()) return
